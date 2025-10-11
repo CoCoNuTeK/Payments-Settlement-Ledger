@@ -1,0 +1,47 @@
+﻿@page "/Error"
+@using System.Diagnostics
+
+<PageTitle>Error</PageTitle>
+
+<section class="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-10 text-slate-800">
+    <header class="space-y-2">
+        <h1 class="text-3xl font-semibold text-red-600">Error.</h1>
+        <h2 class="text-lg font-medium text-red-500">
+            An error occurred while processing your request.
+        </h2>
+    </header>
+
+    @if (ShowRequestId)
+    {
+        <div class="rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-sm">
+            <p class="text-sm">
+                <span class="font-semibold text-slate-700">Request ID:</span>
+                <code class="ml-2 rounded bg-slate-100 px-2 py-0.5 font-mono text-slate-700">@RequestId</code>
+            </p>
+        </div>
+    }
+
+    <section class="space-y-3 rounded-lg border border-amber-200 bg-amber-50 px-5 py-4">
+        <h3 class="text-lg font-semibold text-amber-800">Development Mode</h3>
+        <p class="text-sm leading-6">
+            Swapping to <strong>Development</strong> environment will display more detailed information about the error that occurred.
+        </p>
+        <p class="text-sm leading-6">
+            <strong>The Development environment shouldn't be enabled for deployed applications.</strong>
+            It can result in displaying sensitive information from exceptions to end users.
+            For local debugging, enable the <strong>Development</strong> environment by setting the <strong>ASPNETCORE_ENVIRONMENT</strong> environment variable to <strong>Development</strong>
+            and restarting the app.
+        </p>
+    </section>
+</section>
+
+@code {
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    private string? RequestId { get; set; }
+    private bool ShowRequestId => !string.IsNullOrEmpty(RequestId);
+
+    protected override void OnInitialized() =>
+        RequestId = Activity.Current?.Id ?? HttpContext?.TraceIdentifier;
+}

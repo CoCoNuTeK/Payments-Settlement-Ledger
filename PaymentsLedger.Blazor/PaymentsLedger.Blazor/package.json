@@ -1,0 +1,15 @@
+{
+  "scripts": {
+    "tailwind:build": "tailwindcss -i ./Styles/tailwind.css -o ./wwwroot/css/tailwind.css --minify",
+    "tailwind:watch": "tailwindcss -i ./Styles/tailwind.css -o ./wwwroot/css/tailwind.css --watch",
+    "dotnet:watch": "dotnet watch --project ./PaymentsLedger.Blazor.csproj run --lp http",
+    "dev": "concurrently \"npm:tailwind:watch\" \"npm:dotnet:watch\""
+  },
+  "dependencies": {
+    "@tailwindcss/cli": "^4.1.14",
+    "tailwindcss": "^4.1.14"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

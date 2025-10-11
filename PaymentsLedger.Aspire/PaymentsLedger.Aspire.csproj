@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Sdk Name="Aspire.AppHost.Sdk" Version="9.5.1" />
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <UserSecretsId>009e48fc-7ddc-46cf-bca9-ca542aa13930</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.AppHost" Version="9.5.1" />
+    <PackageReference Include="Aspire.Hosting.Azure.ServiceBus" Version="9.5.1" />
+    <PackageReference Include="Aspire.Hosting.PostgreSQL" Version="9.5.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../PaymentsLedger.MerchantService.Api/PaymentsLedger.MerchantService.Api.csproj" />
+    <ProjectReference Include="../PaymentsLedger.PaymentService.Api/PaymentsLedger.PaymentService.Api.csproj" />
+    <ProjectReference Include="../PaymentsLedger.WorldSimulator.Api/PaymentsLedger.WorldSimulator.Api.csproj" />
+    <ProjectReference Include="../PaymentsLedger.Blazor/PaymentsLedger.Blazor/PaymentsLedger.Blazor.csproj" />
+  </ItemGroup>
+
+</Project>
