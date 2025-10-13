@@ -28,8 +28,7 @@ var paymentCmdQueue = messaging.AddServiceBusQueue("payment-commands")
     .WithProperties(p => p.RequiresDuplicateDetection = true)
     .WithParentRelationship(paymentService);
 
-var blazorRepliesQueue = messaging.AddServiceBusQueue("blazor-replies")
-    .WithParentRelationship(blazorService);
+// Blazor receives replies via topic subscriptions instead of a dedicated queue
 
 var merchantEventsTopic = messaging.AddServiceBusTopic("merchant-events")
     .WithParentRelationship(merchantService);
@@ -52,45 +51,41 @@ var merchantOnSimulatorSub = simulatorEventsTopic.AddServiceBusSubscription("mer
 var paymentOnSimulatorSub = simulatorEventsTopic.AddServiceBusSubscription("payment-on-simulator")
     .WithParentRelationship(paymentService);
 
+var blazorOnMerchantSub = merchantEventsTopic.AddServiceBusSubscription("blazor-on-merchant")
+    .WithParentRelationship(blazorService);
+
+var blazorOnPaymentSub = paymentEventsTopic.AddServiceBusSubscription("blazor-on-payment")
+    .WithParentRelationship(blazorService);
+
 // ---------- Wire dependencies ----------
 merchantService = merchantService
     .WithReference(merchantsDb)
+    .WithReference(messaging)
     .WaitFor(merchantsDb)
     .WaitFor(merchantCmdQueue)
-    .WithReference(merchantCmdQueue)
-    .WithReference(paymentCmdQueue)
-    .WithReference(merchantEventsTopic)
     .WithReference(merchantOnPaymentSub)
     .WithReference(merchantOnSimulatorSub);
 
 paymentService = paymentService
     .WithReference(paymentsDb)
+    .WithReference(messaging)
     .WaitFor(paymentsDb)
     .WaitFor(paymentCmdQueue)
-    .WithReference(paymentCmdQueue)
-    .WithReference(merchantCmdQueue)
-    .WithReference(paymentEventsTopic)
     .WithReference(paymentOnMerchantSub)
     .WithReference(paymentOnSimulatorSub);
 
 worldSimulatorService = worldSimulatorService
+    .WithReference(messaging)
     .WaitFor(merchantCmdQueue)
     .WaitFor(paymentCmdQueue)
-    .WaitFor(simulatorEventsTopic)
-    .WithReference(merchantCmdQueue)
-    .WithReference(paymentCmdQueue)
-    .WithReference(simulatorEventsTopic);
+    .WaitFor(simulatorEventsTopic);
 
 blazorService = blazorService
+    .WithReference(messaging)
     .WaitFor(merchantService)
     .WaitFor(paymentService)
     .WaitFor(worldSimulatorService)
-    .WaitFor(blazorRepliesQueue)
-    .WithReference(merchantCmdQueue)
-    .WithReference(paymentCmdQueue)
-    .WithReference(blazorRepliesQueue)
-    .WithReference(merchantEventsTopic)
-    .WithReference(paymentEventsTopic)
-    .WithReference(simulatorEventsTopic);
+    .WaitFor(blazorOnMerchantSub)
+    .WaitFor(blazorOnPaymentSub);
 
 builder.Build().Run();
