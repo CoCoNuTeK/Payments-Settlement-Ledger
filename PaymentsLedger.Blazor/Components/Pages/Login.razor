@@ -1,12 +1,23 @@
 @page "/login"
 @using Azure.Messaging.ServiceBus
+@using System.Security.Claims
+@using System.Text.Json
+@using Microsoft.Extensions.Logging
 @inject PaymentsLedger.Blazor.Services.IBlazorServiceBusMessenger Bus
+@inject PaymentsLedger.Blazor.Services.CustomAuthenticationService Auth
+@inject NavigationManager Nav
+@implements IDisposable
+@inject ILogger<Login> Logger
 
 <h1 class="text-2xl font-semibold mb-4">Sign in</h1>
 
 @if (!string.IsNullOrEmpty(ValidationError))
 {
   <div class="text-red-600 mb-3">@ValidationError</div>
+}
+@if (!string.IsNullOrEmpty(ServerStatus))
+{
+  <div class="text-red-600 mb-3">Login failed: @ServerStatus</div>
 }
 
 <form @onsubmit="OnSubmitAsync">
@@ -29,8 +40,60 @@
   private string Password { get; set; } = string.Empty;
   private string? ValidationError { get; set; }
   private bool IsSubmitting { get; set; }
+  private string? ServerStatus { get; set; }
 
   private string ButtonText => IsSubmitting ? "Submitting..." : "Sign in";
+
+  private IDisposable? _subscription;
+  private string? _pendingCorrelationId;
+
+  protected override void OnInitialized()
+  {
+    Logger.LogInformation("[Login] Subscribing to auth.login.result replies");
+    _subscription = Bus.SubscribeToReplies(async (msg, ct) =>
+    {
+      if (!string.Equals(msg.Subject, "auth.login.result", StringComparison.OrdinalIgnoreCase))
+        return;
+
+      if (string.IsNullOrEmpty(_pendingCorrelationId) || msg.CorrelationId != _pendingCorrelationId)
+        return;
+
+      var result = JsonSerializer.Deserialize<LoginResultDto>(msg.Body);
+      if (result is null)
+        return;
+
+      await InvokeAsync(() =>
+  {
+      Logger.LogInformation("[Login] Received login result corrId={CorrelationId} status={Status}", msg.CorrelationId, result.status);
+      if (string.Equals(result.status, "Succeeded", StringComparison.OrdinalIgnoreCase))
+      {
+        var claims = new List<Claim>
+    {
+new Claim(ClaimTypes.NameIdentifier, result.userId?.ToString() ?? string.Empty),
+new Claim(ClaimTypes.Name, result.email ?? string.Empty)
+    };
+        if (result.roles is not null)
+        {
+          foreach (var role in result.roles)
+          {
+            claims.Add(new Claim(ClaimTypes.Role, role));
+          }
+        }
+
+        var principal = new ClaimsPrincipal(new ClaimsIdentity(claims, "Bus"));
+        Auth.CurrentUser = principal;
+        Logger.LogInformation("[Login] Success for {Email}; roles={Roles}", result.email ?? string.Empty, string.Join(',', result.roles ?? Array.Empty<string>()));
+      // Navigate to dashboard after sign-in
+        Nav.NavigateTo("/dashboard", forceLoad: false);
+      }
+      else
+      {
+        Logger.LogWarning("[Login] Failed with status {Status}", result.status);
+        ServerStatus = result.status;
+      }
+    });
+    });
+  }
 
   private async Task OnSubmitAsync()
   {
@@ -54,6 +117,7 @@
     try
     {
       var correlationId = Guid.NewGuid().ToString("N");
+      _pendingCorrelationId = correlationId;
       var payload = System.Text.Json.JsonSerializer.Serialize(new
       {
         type = "LoginAttempt",
@@ -69,6 +133,7 @@
         CorrelationId = correlationId
       };
 
+      Logger.LogInformation("[Login] Sending auth.login corrId={CorrelationId} email={Email}", correlationId, Email);
       await Bus.SendMerchantCommandAsync(message);
 
       // Stage 1: We only send; reply handling is wired separately
@@ -90,5 +155,24 @@
     if (!pwd.Any(char.IsLower))
       return "Password must contain at least one lowercase letter.";
     return null;
+  }
+}
+
+@code {
+  private sealed class LoginResultDto
+  {
+    public string status { get; set; } = string.Empty;
+    public Guid? userId { get; set; }
+    public string? email { get; set; }
+    public string[]? roles { get; set; }
+  }
+}
+
+@code
+{
+  public void Dispose()
+  {
+    _subscription?.Dispose();
+    Logger.LogInformation("[Login] Disposed and unsubscribed");
   }
 }

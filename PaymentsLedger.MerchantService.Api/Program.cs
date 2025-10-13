@@ -52,6 +52,7 @@ using (var scope = app.Services.CreateScope())
     await dbContext.Database.MigrateAsync();
 
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<MerchantRole>>();
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<MerchantUser>>();
 
     async Task EnsureRoleAsync(string name)
     {
@@ -69,6 +70,38 @@ using (var scope = app.Services.CreateScope())
 
     await EnsureRoleAsync(MerchantRole.Standard);
     await EnsureRoleAsync(MerchantRole.Premium);
+
+    // Dev convenience: seed a couple of merchant users that satisfy password policy
+    if (app.Environment.IsDevelopment())
+    {
+        await EnsureUserAsync("standard@merchant.local", "DevPassword123A", MerchantRole.Standard);
+        await EnsureUserAsync("premium@merchant.local", "DevPassword123A", MerchantRole.Premium);
+    }
+
+    async Task EnsureUserAsync(string email, string password, string role)
+    {
+        var user = await userManager.FindByEmailAsync(email);
+        if (user is null)
+        {
+            user = new MerchantUser
+            {
+                UserName = email,
+                Email = email,
+                EmailConfirmed = true
+            };
+            var create = await userManager.CreateAsync(user, password);
+            if (!create.Succeeded)
+            {
+                // If password policy blocks creation, do not throw — this is dev-only seed
+                return;
+            }
+        }
+
+        if (!await userManager.IsInRoleAsync(user, role))
+        {
+            await userManager.AddToRoleAsync(user, role);
+        }
+    }
 }
 
 // Subscribe to merchant commands and handle login attempts

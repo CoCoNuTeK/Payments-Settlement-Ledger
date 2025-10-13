@@ -26,6 +26,8 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<CustomAuthenticationService>();
+builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
 
 builder.Services.AddSingleton<BlazorServiceBusMessenger>();
 builder.Services.AddSingleton<IBlazorServiceBusMessenger>(sp => sp.GetRequiredService<BlazorServiceBusMessenger>());

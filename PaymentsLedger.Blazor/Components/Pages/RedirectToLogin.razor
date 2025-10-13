@@ -1,0 +1,11 @@
+@inject NavigationManager Nav
+
+<div class="text-gray-600">Redirecting to sign in…</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        Nav.NavigateTo("/login", replace: true);
+    }
+}
+
