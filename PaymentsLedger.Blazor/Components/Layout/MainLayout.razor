@@ -1,23 +1,23 @@
 ﻿@inherits LayoutComponentBase
 
-<div class="page">
-    <div class="sidebar">
+<div class="min-h-screen flex bg-gray-50">
+    <aside class="w-64 shrink-0 bg-gray-900 text-gray-100">
         <NavMenu />
-    </div>
+    </aside>
 
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+    <main class="flex-1 flex flex-col">
+        <div class="flex items-center justify-end h-12 px-4 border-b bg-white">
+            <a class="text-sm text-blue-600 hover:underline" href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
         </div>
 
-        <article class="content px-4">
+        <article class="p-6">
             @Body
         </article>
     </main>
 </div>
 
-<div id="blazor-error-ui" data-nosnippet>
+<div id="blazor-error-ui" data-nosnippet class="fixed bottom-0 left-0 right-0 bg-red-600 text-white px-4 py-2 hidden">
     An unhandled error has occurred.
-    <a href="." class="reload">Reload</a>
-    <span class="dismiss">🗙</span>
-</div>
+    <a href="." class="underline">Reload</a>
+    <span class="float-right cursor-pointer">🗙</span>
+    </div>
