@@ -28,7 +28,7 @@ public static class DataAccessRegistration
 
         builder.Services.AddIdentityCore<MerchantUser>(options =>
             {
-                options.SignIn.RequireConfirmedAccount = true;
+                options.SignIn.RequireConfirmedAccount = false; // Demo: no email confirmation required
                 options.Stores.SchemaVersion = IdentitySchemaVersions.Version3;
             })
             .AddRoles<IdentityRole<Guid>>()
@@ -41,6 +41,9 @@ public static class DataAccessRegistration
 
         // Seed required roles on startup
         builder.Services.AddHostedService<IdentitySeedHostedService>();
+
+        // Seed default users on startup (depends on roles existing)
+        builder.Services.AddHostedService<UserSeedHostedService>();
 
         return builder;
     }
