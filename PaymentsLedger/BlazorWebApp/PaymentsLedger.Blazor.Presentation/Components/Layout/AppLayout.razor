@@ -1,0 +1,31 @@
+@inherits LayoutComponentBase
+@inject PaymentsLedger.Blazor.Application.Auth.IAuthSignInService Auth
+@inject NavigationManager Navigation
+
+<section class="min-h-screen bg-gray-50 text-gray-900">
+  <header class="border-b border-gray-200 bg-white">
+    <div class="mx-auto flex max-w-6xl items-center justify-between p-4">
+      <span class="text-lg font-semibold text-gray-900">Payments Ledger</span>
+      <AuthorizeView>
+        <Authorized Context="user">
+          <form method="post" @onsubmit="OnLogout" @formname="LogoutForm">
+            <AntiforgeryToken />
+            <button type="submit" class="inline-flex items-center rounded-md bg-gray-900 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900">Log out</button>
+          </form>
+        </Authorized>
+      </AuthorizeView>
+    </div>
+  </header>
+  <main class="mx-auto max-w-6xl p-6">
+    @Body
+  </main>
+  <ReconnectModal />
+</section>
+
+@code {
+  private async Task OnLogout()
+  {
+    await Auth.SignOutAsync();
+    Navigation.NavigateTo("/login", forceLoad: true);
+  }
+}
