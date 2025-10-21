@@ -23,6 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="../PaymentsLedger.Blazor.Application/PaymentsLedger.Blazor.Application.csproj" />
     <ProjectReference Include="../PaymentsLedger.Blazor.Domain/PaymentsLedger.Blazor.Domain.csproj" />
   </ItemGroup>
 

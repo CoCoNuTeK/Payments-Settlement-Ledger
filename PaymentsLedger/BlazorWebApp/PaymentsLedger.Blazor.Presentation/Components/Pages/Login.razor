@@ -1,0 +1,89 @@
+@page "/login"
+@inject IAuthSignInService Auth
+@inject NavigationManager Navigation
+
+<h1 class="text-2xl font-semibold text-gray-900 mb-6">Sign in</h1>
+
+<EditForm Model="Model" OnValidSubmit="OnValidSubmit" FormName="LoginForm">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    @if (!string.IsNullOrEmpty(ErrorMessage))
+    {
+        <div class="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700" role="alert">@ErrorMessage</div>
+    }
+
+    <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700" for="login-email">Email</label>
+        <InputText id="login-email" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" @bind-Value="Model!.Email" />
+        <ValidationMessage For="() => Model!.Email" />
+    </div>
+
+    <div class="mb-6">
+        <label class="block text-sm font-medium text-gray-700" for="login-password">Password</label>
+        <InputText id="login-password" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" @bind-Value="Model!.Password" type="password" />
+        <ValidationMessage For="() => Model!.Password" />
+    </div>
+
+    <button type="submit" class="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Sign in</button>
+</EditForm>
+
+<div class="mt-8 rounded-md border border-sky-200 bg-sky-50 p-4">
+    <h2 class="text-sm font-semibold text-sky-900">Demo accounts</h2>
+    <p class="mt-2 text-sm text-sky-800">Use one of the seeded demo users:</p>
+    <ul class="mt-2 space-y-1 text-sm">
+        <li>
+            <span class="font-medium">Standard:</span>
+            <code class="mx-1 rounded bg-white px-1 py-0.5">standard@demo.local</code>
+            <span class="mx-1">/</span>
+            <code class="rounded bg-white px-1 py-0.5">Passw0rd!</code>
+        </li>
+        <li>
+            <span class="font-medium">Premium:</span>
+            <code class="mx-1 rounded bg-white px-1 py-0.5">premium@demo.local</code>
+            <span class="mx-1">/</span>
+            <code class="rounded bg-white px-1 py-0.5">Passw0rd!</code>
+        </li>
+    </ul>
+</div>
+
+@code {
+    [SupplyParameterFromForm]
+    private LoginModel? Model { get; set; }
+
+    private string? ErrorMessage { get; set; }
+
+    protected override void OnInitialized()
+        => Model ??= new();
+
+    private async Task OnValidSubmit()
+    {
+        ErrorMessage = null;
+        var result = await Auth.PasswordSignInAsync(Model!.Email!, Model!.Password!);
+
+        if (result.Succeeded)
+        {
+            // Full reload so the new auth cookie is used to establish an authenticated context
+            Navigation.NavigateTo("/dashboard", forceLoad: true);
+            return;
+        }
+
+        ErrorMessage = result.Status switch
+        {
+            AuthSignInStatus.LockedOut => "Account is locked. Try again later.",
+            AuthSignInStatus.RequiresTwoFactor => "Two-factor authentication required.",
+            AuthSignInStatus.NotAllowed => "Sign-in not allowed.",
+            _ => "Invalid credentials."
+        };
+    }
+
+    private sealed class LoginModel
+    {
+        [Required]
+        [EmailAddress]
+        public string? Email { get; set; }
+
+        [Required]
+        public string? Password { get; set; }
+    }
+}
