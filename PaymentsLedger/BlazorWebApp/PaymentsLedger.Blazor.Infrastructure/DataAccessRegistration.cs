@@ -5,7 +5,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using PaymentsLedger.Blazor.Infrastructure.Identity;
+using PaymentsLedger.Blazor.Infrastructure.Auth;
 using PaymentsLedger.Blazor.Infrastructure.Persistence;
+using PaymentsLedger.Blazor.Application.Auth;
 
 namespace PaymentsLedger.Blazor.Infrastructure;
 
@@ -35,6 +37,9 @@ public static class DataAccessRegistration
             .AddEntityFrameworkStores<ApplicationDbContext>()
             .AddSignInManager()
             .AddDefaultTokenProviders();
+
+        // App-facing auth abstraction mapping (Application -> Infrastructure)
+        builder.Services.AddScoped<IAuthSignInService, AuthSignInService>();
 
         // Apply pending EF Core migrations on startup (before seeding)
         builder.Services.AddHostedService<ApplyMigrationsHostedService>();

@@ -1,0 +1,17 @@
+@page "/dashboard"
+@attribute [Authorize]
+
+<h1>Dashboard</h1>
+
+<Microsoft.AspNetCore.Components.Authorization.AuthorizeView>
+  <Authorized>
+    <p>Hello, @context.User.Identity?.Name!</p>
+  </Authorized>
+  <NotAuthorized>
+    <p>You're not authorized.</p>
+  </NotAuthorized>
+  <Authorizing>
+    <p>Authorizing...</p>
+  </Authorizing>
+
+</Microsoft.AspNetCore.Components.Authorization.AuthorizeView>
