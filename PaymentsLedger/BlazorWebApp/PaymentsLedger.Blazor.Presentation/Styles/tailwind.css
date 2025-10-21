@@ -1,3 +1,8 @@
 @import "tailwindcss";
 
+/* Tell Tailwind where to scan for class usage (v4) */
+@source "../Components/**/*.razor";
+@source "../**/*.cshtml";
+@source "../**/*.html";
+
 /* Layer your custom tokens and component styles below if needed. */
