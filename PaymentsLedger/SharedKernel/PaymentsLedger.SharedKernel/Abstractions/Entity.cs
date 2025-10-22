@@ -1,4 +1,4 @@
-namespace PaymentsLedger.Blazor.Domain.Abstractions;
+namespace PaymentsLedger.SharedKernel.Abstractions;
 
 public abstract class Entity : IEquatable<Entity>
 {

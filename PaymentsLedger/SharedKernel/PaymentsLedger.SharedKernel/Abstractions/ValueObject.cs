@@ -1,6 +1,6 @@
 using System.Collections;
 
-namespace PaymentsLedger.Blazor.Domain.Abstractions;
+namespace PaymentsLedger.SharedKernel.Abstractions;
 
 public abstract class ValueObject : IEquatable<ValueObject>
 {
