@@ -18,6 +18,11 @@ var serviceBus = builder.AddAzureServiceBus("messaging")
 var paymentsTopic = serviceBus.AddServiceBusTopic("payments");
 var blazorSubscription = paymentsTopic.AddServiceBusSubscription("blazor-sub");
 
+// ---------- Payment Service Datastore (PostgreSQL) ----------
+var paymentPostgres = builder.AddPostgres("payment-postgres")
+    .WithParentRelationship(paymentService);
+var paymentsDb = paymentPostgres.AddDatabase("paymentsdb");
+
 // ---------- Wire dependencies ----------
 blazorPresentation = blazorPresentation
     .WithReference(blazorDb)
@@ -29,6 +34,8 @@ blazorPresentation = blazorPresentation
 // Publisher: Payment Service publishes to the payments topic
 paymentService = paymentService
     .WithReference(paymentsTopic)
-    .WaitFor(paymentsTopic);
+    .WaitFor(paymentsTopic)
+    .WithReference(paymentsDb)
+    .WaitFor(paymentsDb);
 
 builder.Build().Run();
