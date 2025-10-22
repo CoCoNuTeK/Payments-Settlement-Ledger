@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../../BlazorWebApp/PaymentsLedger.Blazor.Presentation/PaymentsLedger.Blazor.Presentation.csproj" />
+    <ProjectReference Include="../../PaymentService/PaymentsLedger.PaymentService.Presentation/PaymentsLedger.PaymentService.Presentation.csproj" />
   </ItemGroup>
 
 </Project>
