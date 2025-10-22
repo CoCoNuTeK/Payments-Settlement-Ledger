@@ -1,5 +1,7 @@
+using Microsoft.EntityFrameworkCore;
 using PaymentsLedger.Blazor.Presentation.Components;
 using PaymentsLedger.Blazor.Infrastructure;
+using PaymentsLedger.Blazor.Infrastructure.Persistence;
 var builder = WebApplication.CreateBuilder(args);
 
 // Infrastructure wiring (Aspire-backed Npgsql, DbContext, Identity)
@@ -12,6 +14,13 @@ builder.Services.AddRazorComponents()
 builder.Services.AddCascadingAuthenticationState();
 
 var app = builder.Build();
+
+// Ensure database is migrated; seeding runs via UseSeeding/UseAsyncSeeding
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    await db.Database.MigrateAsync();
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -32,4 +41,4 @@ app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-app.Run();
+await app.RunAsync();

@@ -41,15 +41,6 @@ public static class DataAccessRegistration
         // App-facing auth abstraction mapping (Application -> Infrastructure)
         builder.Services.AddScoped<IAuthSignInService, AuthSignInService>();
 
-        // Apply pending EF Core migrations on startup (before seeding)
-        builder.Services.AddHostedService<ApplyMigrationsHostedService>();
-
-        // Seed required roles on startup
-        builder.Services.AddHostedService<IdentitySeedHostedService>();
-
-        // Seed default users on startup (depends on roles existing)
-        builder.Services.AddHostedService<UserSeedHostedService>();
-
         return builder;
     }
 }
