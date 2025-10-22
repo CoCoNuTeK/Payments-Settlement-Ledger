@@ -2,6 +2,13 @@ namespace PaymentsLedger.SharedKernel.Abstractions;
 
 public abstract class Entity : IEquatable<Entity>
 {
+    protected Entity() { }
+
+    protected Entity(Guid id)
+    {
+        Id = id;
+    }
+
     public Guid Id { get; init; }
 
     public override bool Equals(object? obj)
@@ -21,4 +28,3 @@ public abstract class Entity : IEquatable<Entity>
 
     public static bool operator !=(Entity? left, Entity? right) => !(left == right);
 }
-
