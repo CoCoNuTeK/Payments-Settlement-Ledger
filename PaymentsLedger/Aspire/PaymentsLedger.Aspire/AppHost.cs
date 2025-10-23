@@ -30,14 +30,14 @@ blazorPresentation = blazorPresentation
     .WithReference(blazorDb)
     .WaitFor(blazorDb)
     // Subscriber: Blazor subscribes to the payments topic via subscription
-    .WithReference(blazorSubscription)
+    .WithReference(serviceBus)
     .WaitFor(blazorSubscription);
 
 // Publisher: Payment Service publishes to the payments topic
 paymentService = paymentService
     // Reference the namespace so client connectionName: "messaging" is valid
     .WithReference(serviceBus)
-    .WaitFor(serviceBus)
+    .WaitFor(paymentsTopic)
     .WithReference(paymentsDb)
     .WaitFor(paymentsDb);
 
