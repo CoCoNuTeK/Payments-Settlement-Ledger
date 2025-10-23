@@ -1,6 +1,6 @@
 using System.Threading.Channels;
 using Microsoft.Extensions.DependencyInjection;
-using PaymentsLedger.PaymentService.Application.Abstractions.Messaging;
+using PaymentsLedger.PaymentService.Application.MessagingDefinition;
 using PaymentsLedger.PaymentService.Infrastructure.Messaging.InProc;
 
 namespace PaymentsLedger.PaymentService.Infrastructure;

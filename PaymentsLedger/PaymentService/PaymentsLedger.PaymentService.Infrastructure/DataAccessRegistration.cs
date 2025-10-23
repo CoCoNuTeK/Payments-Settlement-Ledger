@@ -2,6 +2,7 @@ using Aspire.Npgsql.EntityFrameworkCore.PostgreSQL;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using PaymentsLedger.PaymentService.Infrastructure.Persistence;
+using PaymentsLedger.PaymentService.Application.Aggregates.PaymentAggregate.Commands.PaymentCreated;
 
 namespace PaymentsLedger.PaymentService.Infrastructure;
 
