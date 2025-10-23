@@ -41,6 +41,9 @@ public static class DataAccessRegistration
         // App-facing auth abstraction mapping (Application -> Infrastructure)
         builder.Services.AddScoped<IAuthSignInService, AuthSignInService>();
 
+        // Apply migrations + seed identity via hosted service
+        builder.Services.AddHostedService<ApplyMigrationsHostedService>();
+
         return builder;
     }
 }

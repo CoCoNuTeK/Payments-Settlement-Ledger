@@ -15,12 +15,7 @@ builder.Services.AddCascadingAuthenticationState();
 
 var app = builder.Build();
 
-// Ensure database is migrated; seeding runs via UseSeeding/UseAsyncSeeding
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    await db.Database.MigrateAsync();
-}
+// Migrations + seeding are applied by ApplyMigrationsHostedService in Infrastructure
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
