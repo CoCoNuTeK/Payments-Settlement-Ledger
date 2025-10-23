@@ -1,7 +1,9 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using PaymentsLedger.PaymentService.Application.Abstractions.Messaging;
-using PaymentsLedger.PaymentService.Application.Messages;
+using Microsoft.Extensions.DependencyInjection;
+using PaymentsLedger.PaymentService.Presentation.DTO;
+using PaymentsLedger.PaymentService.Application.MessagingDefinition;
+using PaymentsLedger.PaymentService.Application.Aggregates.PaymentAggregate.Commands.PaymentCreated;
 
 namespace PaymentsLedger.PaymentService.Presentation.HostedServices;
 
@@ -27,7 +29,7 @@ internal sealed class PaymentSimulatorHostedService(
                     var paymentId = Guid.NewGuid();
                     var merchantId = _random.Next(0, 2) == 0 ? Merchant1 : Merchant2;
                     var amount = Math.Round((decimal)(_random.NextDouble() * 1000.0 + 1.0), 2);
-                    var currency = "USD";
+                    var currency = "EUR";
 
                     var payload = new PaymentCreationPayload(
                         PaymentId: paymentId,
@@ -35,9 +37,16 @@ internal sealed class PaymentSimulatorHostedService(
                         Amount: amount,
                         Currency: currency);
 
+                    var payment = payload.ToDomain();
+
                     var envelope = new InternalMessageEnvelope(
-                        payload: payload,
-                        kind: InternalMessageKind.Command);
+                        payload: payment,
+                        kind: InternalMessageKind.Command,
+                        handler: async (sp, ct) =>
+                        {
+                            var handler = sp.GetRequiredService<IPaymentCreatedHandler>();
+                            await handler.HandleAsync(payment, ct);
+                        });
 
                     await bus.PublishAsync(envelope, stoppingToken);
                 }

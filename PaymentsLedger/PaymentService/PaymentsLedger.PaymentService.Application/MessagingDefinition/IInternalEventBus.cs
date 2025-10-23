@@ -1,4 +1,4 @@
-namespace PaymentsLedger.PaymentService.Application.Abstractions.Messaging;
+namespace PaymentsLedger.PaymentService.Application.MessagingDefinition;
 
 public interface IInternalEventBus
 {
