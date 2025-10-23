@@ -8,6 +8,7 @@ var paymentService = builder.AddProject<Projects.PaymentsLedger_PaymentService_P
 
 // ---------- Datastore (PostgreSQL) ----------
 var blazorPostgres = builder.AddPostgres("blazor-postgres")
+    .WithHostPort(5433)
     .WithParentRelationship(blazorPresentation);
 var blazorDb = blazorPostgres.AddDatabase("blazordb");
 
@@ -20,6 +21,7 @@ var blazorSubscription = paymentsTopic.AddServiceBusSubscription("blazor-sub");
 
 // ---------- Payment Service Datastore (PostgreSQL) ----------
 var paymentPostgres = builder.AddPostgres("payment-postgres")
+    .WithHostPort(5434)
     .WithParentRelationship(paymentService);
 var paymentsDb = paymentPostgres.AddDatabase("paymentsdb");
 
