@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using PaymentsLedger.PaymentService.Application.MessagingDefinition;
 using PaymentsLedger.PaymentService.Application.Aggregates.PaymentAggregate.Commands.PaymentCreated;
 using PaymentsLedger.PaymentService.Infrastructure.Messaging.InProc;
+using PaymentsLedger.PaymentService.Application.Aggregates.PaymentAggregate.Events.PaymentCreated;
 
 namespace PaymentsLedger.PaymentService.Infrastructure;
 
@@ -27,6 +28,7 @@ public static class MessagingRegistration
 
         // Register application handlers used by the in-proc messaging system
         services.AddScoped<IPaymentCreatedHandler, PaymentCreatedHandler>();
+        services.AddScoped<IPaymentCreatedEventHandler, PaymentCreatedEventHandler>();
 
         // Background consumer that drains the channel and invokes handlers
         services.AddHostedService<InProcMessagePump>();

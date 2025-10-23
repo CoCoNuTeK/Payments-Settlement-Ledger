@@ -1,26 +1,15 @@
 namespace PaymentsLedger.PaymentService.Application.MessagingDefinition;
 
-public sealed class InternalMessageEnvelope
+public sealed class InternalMessageEnvelope(
+    object payload,
+    Func<IServiceProvider, CancellationToken, Task> handler,
+    Guid? id = null,
+    DateTimeOffset? createdAtUtc = null)
 {
-    public Guid Id { get; }
-    public InternalMessageKind Kind { get; }
-    public object Payload { get; }
-    public DateTimeOffset CreatedAtUtc { get; }
+    public Guid Id { get; } = id ?? Guid.NewGuid();
+    public object Payload { get; } = payload ?? throw new ArgumentNullException(nameof(payload));
+    public DateTimeOffset CreatedAtUtc { get; } = createdAtUtc ?? DateTimeOffset.UtcNow;
     // Optional per-message handler delegate for fast dispatch.
     // Consumer can create a scope and pass its IServiceProvider.
-    public Func<IServiceProvider, CancellationToken, Task>? Handler { get; }
-
-    public InternalMessageEnvelope(
-        object payload,
-        InternalMessageKind kind,
-        Func<IServiceProvider, CancellationToken, Task>? handler = null,
-        Guid? id = null,
-        DateTimeOffset? createdAtUtc = null)
-    {
-        Payload = payload ?? throw new ArgumentNullException(nameof(payload));
-        Kind = kind;
-        Handler = handler;
-        Id = id ?? Guid.NewGuid();
-        CreatedAtUtc = createdAtUtc ?? DateTimeOffset.UtcNow;
-    }
+    public Func<IServiceProvider, CancellationToken, Task> Handler { get; } = handler ?? throw new ArgumentNullException(nameof(handler));
 }

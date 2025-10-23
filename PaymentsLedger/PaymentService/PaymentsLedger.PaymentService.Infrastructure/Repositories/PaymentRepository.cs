@@ -14,5 +14,10 @@ internal sealed class PaymentRepository(PaymentDbContext dbContext) : IPaymentRe
         await _dbContext.Payments.AddAsync(payment, cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
-}
 
+    public async Task AddOutboxEventAsync(string eventName, string eventContent, CancellationToken cancellationToken = default)
+    {
+        await _dbContext.OutboxIntegrationEvents.AddAsync(new OutboxIntegrationEvent(eventName, eventContent), cancellationToken);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+}

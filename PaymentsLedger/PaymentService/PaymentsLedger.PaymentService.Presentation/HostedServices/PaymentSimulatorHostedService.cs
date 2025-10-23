@@ -41,7 +41,6 @@ internal sealed class PaymentSimulatorHostedService(
 
                     var envelope = new InternalMessageEnvelope(
                         payload: payment,
-                        kind: InternalMessageKind.Command,
                         handler: async (sp, ct) =>
                         {
                             var handler = sp.GetRequiredService<IPaymentCreatedHandler>();
