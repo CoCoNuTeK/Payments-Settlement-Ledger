@@ -13,6 +13,9 @@ public static class DataAccessRegistration
 
         builder.Services.AddInProcMessaging();
 
+        // Apply EF Core migrations for PaymentDbContext at startup
+        builder.Services.AddHostedService<PaymentDbMigratorHostedService>();
+
         return builder;
     }
 }
