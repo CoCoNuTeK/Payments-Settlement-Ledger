@@ -1,6 +1,7 @@
 using System.Threading.Channels;
 using Microsoft.Extensions.DependencyInjection;
 using PaymentsLedger.PaymentService.Application.MessagingDefinition;
+using PaymentsLedger.PaymentService.Application.Aggregates.PaymentAggregate.Commands.PaymentCreated;
 using PaymentsLedger.PaymentService.Infrastructure.Messaging.InProc;
 
 namespace PaymentsLedger.PaymentService.Infrastructure;
@@ -23,6 +24,9 @@ public static class MessagingRegistration
         });
 
         services.AddSingleton<IInternalEventBus, InProcChannel>();
+
+        // Register application handlers used by the in-proc messaging system
+        services.AddScoped<IPaymentCreatedHandler, PaymentCreatedHandler>();
         return services;
     }
 }
