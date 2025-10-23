@@ -1,7 +1,4 @@
-using System;
-using Aspire.Npgsql.EntityFrameworkCore.PostgreSQL;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using PaymentsLedger.Blazor.Infrastructure.Identity;
