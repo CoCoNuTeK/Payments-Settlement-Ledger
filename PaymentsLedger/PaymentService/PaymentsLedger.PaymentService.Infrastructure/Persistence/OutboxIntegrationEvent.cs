@@ -6,6 +6,8 @@ public sealed class OutboxIntegrationEvent
     public string EventName { get; private set; } = null!;
     public string EventContent { get; private set; } = null!;
     public DateTimeOffset CreatedAtUtc { get; private set; }
+    public bool Processed { get; private set; }
+    public DateTimeOffset? ProcessedAtUtc { get; private set; }
 
     private OutboxIntegrationEvent() { }
 
@@ -15,6 +17,12 @@ public sealed class OutboxIntegrationEvent
         EventName = eventName;
         EventContent = eventContent;
         CreatedAtUtc = DateTimeOffset.UtcNow;
+        Processed = false;
+    }
+
+    public void MarkProcessed()
+    {
+        Processed = true;
+        ProcessedAtUtc = DateTimeOffset.UtcNow;
     }
 }
-
