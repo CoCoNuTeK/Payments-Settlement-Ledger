@@ -27,7 +27,7 @@ public static class MessagingRegistration
         services.AddSingleton<IInternalEventBus, InProcChannel>();
 
         // Register application handlers used by the in-proc messaging system
-        services.AddScoped<IPaymentCreatedHandler, PaymentCreatedHandler>();
+        services.AddScoped<IPaymentCreatedCommandHandler, PaymentCreatedCommandHandler>();
         services.AddScoped<IPaymentCreatedEventHandler, PaymentCreatedEventHandler>();
 
         // Background consumer that drains the channel and invokes handlers

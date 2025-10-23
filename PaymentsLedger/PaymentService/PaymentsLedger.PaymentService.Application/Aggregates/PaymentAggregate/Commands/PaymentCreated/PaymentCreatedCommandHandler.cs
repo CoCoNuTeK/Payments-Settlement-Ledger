@@ -4,9 +4,9 @@ using PaymentsLedger.PaymentService.Application.Aggregates.PaymentAggregate.Even
 
 namespace PaymentsLedger.PaymentService.Application.Aggregates.PaymentAggregate.Commands.PaymentCreated;
 
-public sealed class PaymentCreatedHandler(
+public sealed class PaymentCreatedCommandHandler(
     IPaymentRepository paymentRepository,
-    IInternalEventBus bus) : IPaymentCreatedHandler
+    IInternalEventBus bus) : IPaymentCreatedCommandHandler
 {
     public async Task HandleAsync(Payment payment, CancellationToken cancellationToken = default)
     {

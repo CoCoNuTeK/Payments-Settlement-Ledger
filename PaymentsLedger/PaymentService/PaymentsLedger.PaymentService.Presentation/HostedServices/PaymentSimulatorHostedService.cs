@@ -43,7 +43,7 @@ internal sealed class PaymentSimulatorHostedService(
                         payload: payment,
                         handler: async (sp, ct) =>
                         {
-                            var handler = sp.GetRequiredService<IPaymentCreatedHandler>();
+                            var handler = sp.GetRequiredService<IPaymentCreatedCommandHandler>();
                             await handler.HandleAsync(payment, ct);
                         });
 
