@@ -1,6 +1,6 @@
 using System.Text;
-using System.Threading.Channels;
 using Azure.Messaging.ServiceBus;
+using Npgsql;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -10,7 +10,9 @@ using PaymentsLedger.PaymentService.Infrastructure.Persistence;
 namespace PaymentsLedger.PaymentService.Infrastructure.Messaging.ServiceBus;
 
 internal sealed class OutboxPublisherHostedService(
-    IServiceProvider serviceProvider,
+    IServiceScopeFactory scopeFactory,
+    ServiceBusClient client,
+    IIntegrationEventRouter router,
     ILogger<OutboxPublisherHostedService> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -21,52 +23,68 @@ internal sealed class OutboxPublisherHostedService(
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                using var scope = serviceProvider.CreateScope();
-                var db = scope.ServiceProvider.GetRequiredService<PaymentDbContext>();
-                var router = scope.ServiceProvider.GetRequiredService<IIntegrationEventRouter>();
-                var client = scope.ServiceProvider.GetRequiredService<ServiceBusClient>();
-
-                var pending = await db.OutboxIntegrationEvents
-                    .Where(e => !e.Processed)
-                    .OrderBy(e => e.CreatedAtUtc)
-                    .Take(50)
-                    .ToListAsync(stoppingToken);
-
-                if (pending.Count == 0)
+                try
                 {
-                    await Task.Delay(TimeSpan.FromSeconds(2), stoppingToken);
-                    continue;
-                }
+                    using var scope = scopeFactory.CreateScope();
+                    var db = scope.ServiceProvider.GetRequiredService<PaymentDbContext>();
 
-                foreach (var evt in pending)
-                {
-                    try
+                    var pending = await db.OutboxIntegrationEvents
+                        .Where(e => !e.Processed)
+                        .OrderBy(e => e.CreatedAtUtc)
+                        .Take(50)
+                        .ToListAsync(stoppingToken);
+
+                    if (pending.Count == 0)
                     {
-                        var topicName = router.GetTopicName(evt.EventName);
-                        var sender = client.CreateSender(topicName);
+                        await Task.Delay(TimeSpan.FromSeconds(2), stoppingToken);
+                        continue;
+                    }
 
-                        var message = new ServiceBusMessage(Encoding.UTF8.GetBytes(evt.EventContent))
+                    foreach (var evt in pending)
+                    {
+                        try
                         {
-                            Subject = evt.EventName,
-                            ContentType = "application/json"
-                        };
+                            var topicName = router.GetTopicName(evt.EventName);
+                            var sender = client.CreateSender(topicName);
 
-                        await sender.SendMessageAsync(message, stoppingToken);
+                            var message = new ServiceBusMessage(Encoding.UTF8.GetBytes(evt.EventContent))
+                            {
+                                Subject = evt.EventName,
+                                ContentType = "application/json"
+                            };
 
-                        evt.MarkProcessed();
-                        await db.SaveChangesAsync(stoppingToken);
+                            await sender.SendMessageAsync(message, stoppingToken);
 
-                        logger.LogDebug("Published outbox event {EventName} (Id={Id}) to topic {Topic}.", evt.EventName, evt.Id, topicName);
+                            evt.MarkProcessed();
+                            await db.SaveChangesAsync(stoppingToken);
+
+                            logger.LogDebug("Published outbox event {EventName} (Id={Id}) to topic {Topic}.", evt.EventName, evt.Id, topicName);
+                        }
+                        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                        {
+                            break;
+                        }
+                        catch (Exception ex)
+                        {
+                            logger.LogError(ex, "Error publishing outbox event {EventName} (Id={Id}). Will retry next pass.", evt.EventName, evt.Id);
+                            // leave as unprocessed; will retry on next loop
+                        }
                     }
-                    catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-                    {
-                        break;
-                    }
-                    catch (Exception ex)
-                    {
-                        logger.LogError(ex, "Error publishing outbox event {EventName} (Id={Id}). Will retry next pass.", evt.EventName, evt.Id);
-                        // leave as unprocessed; will retry on next loop
-                    }
+                }
+                catch (PostgresException pex) when (pex.SqlState == "42P01")
+                {
+                    // Outbox table not created yet (migrations not applied). Wait and retry.
+                    logger.LogInformation("Outbox table not found yet. Waiting for migrations to complete before retrying.");
+                    await Task.Delay(TimeSpan.FromSeconds(3), stoppingToken);
+                }
+                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                {
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Unexpected error in outbox publisher loop. Retrying shortly.");
+                    await Task.Delay(TimeSpan.FromSeconds(3), stoppingToken);
                 }
             }
         }
@@ -80,4 +98,3 @@ internal sealed class OutboxPublisherHostedService(
         }
     }
 }
-
