@@ -27,6 +27,9 @@ public static class MessagingRegistration
 
         // Register application handlers used by the in-proc messaging system
         services.AddScoped<IPaymentCreatedHandler, PaymentCreatedHandler>();
+
+        // Background consumer that drains the channel and invokes handlers
+        services.AddHostedService<InProcMessagePump>();
         return services;
     }
 }
