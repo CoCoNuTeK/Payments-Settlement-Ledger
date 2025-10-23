@@ -2,12 +2,11 @@ using PaymentsLedger.PaymentService.Domain.PaymentAggregate;
 
 namespace PaymentsLedger.PaymentService.Application.Aggregates.PaymentAggregate.Commands.PaymentCreated;
 
-public sealed class PaymentCreatedHandler : IPaymentCreatedHandler
+public sealed class PaymentCreatedHandler(IPaymentRepository paymentRepository) : IPaymentCreatedHandler
 {
     public Task HandleAsync(Payment payment, CancellationToken cancellationToken = default)
     {
-        // TODO: Implement application logic for handling a newly created payment
-        // e.g., validation, domain services, repository writes, publishing events, etc.
-        return Task.CompletedTask;
+        // Persist the payment. Further logic (events, notifications) can follow later.
+        return paymentRepository.AddAsync(payment, cancellationToken);
     }
 }
