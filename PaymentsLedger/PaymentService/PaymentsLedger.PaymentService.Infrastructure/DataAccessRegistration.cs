@@ -11,6 +11,8 @@ public static class DataAccessRegistration
     {
         builder.AddNpgsqlDbContext<PaymentDbContext>(connectionName: "paymentsdb");
 
+        builder.Services.AddInProcMessaging();
+
         return builder;
     }
 }
