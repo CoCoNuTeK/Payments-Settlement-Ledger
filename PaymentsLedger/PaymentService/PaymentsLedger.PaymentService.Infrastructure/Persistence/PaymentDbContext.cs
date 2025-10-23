@@ -6,6 +6,7 @@ namespace PaymentsLedger.PaymentService.Infrastructure.Persistence;
 public sealed class PaymentDbContext(DbContextOptions<PaymentDbContext> options) : DbContext(options)
 {
     public DbSet<Payment> Payments => Set<Payment>();
+    public DbSet<OutboxIntegrationEvent> OutboxIntegrationEvents => Set<OutboxIntegrationEvent>();
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {

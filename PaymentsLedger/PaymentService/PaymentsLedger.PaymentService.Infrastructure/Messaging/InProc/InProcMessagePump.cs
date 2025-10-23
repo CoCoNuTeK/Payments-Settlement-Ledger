@@ -24,17 +24,10 @@ internal sealed class InProcMessagePump(
                 {
                     try
                     {
-                        if (message.Handler is null)
-                        {
-                            logger.LogWarning("No handler delegate attached for message {MessageId} (Kind={Kind}, PayloadType={PayloadType}). Dropping.",
-                                message.Id, message.Kind, message.Payload.GetType().FullName);
-                            continue;
-                        }
-
                         using var scope = serviceProvider.CreateScope();
-                        await message.Handler(scope.ServiceProvider, stoppingToken);
 
-                        logger.LogDebug("Processed message {MessageId} (Kind={Kind}).", message.Id, message.Kind);
+                        await message.Handler(scope.ServiceProvider, stoppingToken);
+                        logger.LogDebug("Processed message {MessageId} (PayloadType={PayloadType}).", message.Id, message.Payload.GetType().FullName);
                     }
                     catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
                     {
@@ -43,7 +36,7 @@ internal sealed class InProcMessagePump(
                     }
                     catch (Exception ex)
                     {
-                        logger.LogError(ex, "Error processing message {MessageId} (Kind={Kind}).", message.Id, message.Kind);
+                        logger.LogError(ex, "Error processing message {MessageId}.", message.Id);
                         // For demo: swallow and continue. Add retries/poison handling if needed.
                     }
                 }
@@ -59,4 +52,3 @@ internal sealed class InProcMessagePump(
         }
     }
 }
-
