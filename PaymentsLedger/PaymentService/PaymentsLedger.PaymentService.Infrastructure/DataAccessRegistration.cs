@@ -16,13 +16,14 @@ public static class DataAccessRegistration
         builder.AddNpgsqlDbContext<PaymentDbContext>(connectionName: "paymentsdb");
         builder.AddAzureServiceBusClient(connectionName: "messaging");
 
+        // Apply EF Core migrations for PaymentDbContext at startup (register before pumps)
+        builder.Services.AddHostedService<PaymentDbMigratorHostedService>();
+
+        // Messaging (in-proc bus + pumps)
         builder.Services.AddInProcMessaging();
 
         // Repositories
         builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
-
-        // Apply EF Core migrations for PaymentDbContext at startup
-        builder.Services.AddHostedService<PaymentDbMigratorHostedService>();
 
         return builder;
     }

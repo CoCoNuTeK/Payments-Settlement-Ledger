@@ -35,8 +35,9 @@ blazorPresentation = blazorPresentation
 
 // Publisher: Payment Service publishes to the payments topic
 paymentService = paymentService
-    .WithReference(paymentsTopic)
-    .WaitFor(paymentsTopic)
+    // Reference the namespace so client connectionName: "messaging" is valid
+    .WithReference(serviceBus)
+    .WaitFor(serviceBus)
     .WithReference(paymentsDb)
     .WaitFor(paymentsDb);
 
