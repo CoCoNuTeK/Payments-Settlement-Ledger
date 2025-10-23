@@ -5,15 +5,15 @@ namespace PaymentsLedger.PaymentService.Infrastructure.Messaging.InProc;
 
 internal sealed class InProcChannel : IInternalEventBus
 {
-    private readonly Channel<object> _channel;
+    private readonly Channel<InternalMessageEnvelope> _channel;
 
-    public InProcChannel(Channel<object> channel)
+    public InProcChannel(Channel<InternalMessageEnvelope> channel)
     {
         _channel = channel;
     }
 
-    public async Task PublishAsync<TEvent>(TEvent @event, CancellationToken cancellationToken = default)
+    public async Task PublishAsync(InternalMessageEnvelope message, CancellationToken cancellationToken = default)
     {
-        await _channel.Writer.WriteAsync(@event!, cancellationToken);
+        await _channel.Writer.WriteAsync(message, cancellationToken);
     }
 }

@@ -19,7 +19,7 @@ public static class MessagingRegistration
                 AllowSynchronousContinuations = false
             };
 
-            return Channel.CreateBounded<object>(options);
+            return Channel.CreateBounded<InternalMessageEnvelope>(options);
         });
 
         services.AddSingleton<IInternalEventBus, InProcChannel>();
