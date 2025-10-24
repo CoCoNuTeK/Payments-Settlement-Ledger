@@ -23,7 +23,7 @@ internal sealed class PaymentSimulatorHostedService(
         {
             try
             {
-                var batchSize = _random.Next(6, 11); // 6..10 inclusive
+                const int batchSize = 10;
                 for (var i = 0; i < batchSize; i++)
                 {
                     var paymentId = Guid.NewGuid();
@@ -52,7 +52,8 @@ internal sealed class PaymentSimulatorHostedService(
 
                 logger.LogInformation("Payment simulator published {Count} messages.", batchSize);
 
-                await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
+                // Pace: 10 payments every 10 seconds
+                await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
