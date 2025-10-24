@@ -16,7 +16,13 @@ public static class DataAccessRegistration
         // Register EF Core DbContext using Aspire EF integration, bound to the
         // database resource name from AppHost ("blazordb"). Aspire supplies the
         // connection string at runtime; design-time uses appsettings/user-secrets.
-        builder.AddNpgsqlDbContext<ApplicationDbContext>(connectionName: "blazordb");
+        builder.AddNpgsqlDbContext<ApplicationDbContext>(
+            connectionName: "blazordb",
+            configureDbContextOptions: options =>
+            {
+                // Avoid throwing on PendingModelChangesWarning during runtime migrations
+                options.ConfigureWarnings(w => w.Log(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+            });
 
         // Register Azure Service Bus client (namespace resource name in AppHost is "messaging")
         builder.AddAzureServiceBusClient(connectionName: "messaging");
