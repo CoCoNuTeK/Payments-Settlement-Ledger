@@ -17,8 +17,8 @@ public static class MessagingRegistration
             var options = new BoundedChannelOptions(100)
             {
                 FullMode = BoundedChannelFullMode.Wait,
-                SingleReader = false,
-                SingleWriter = false,
+                SingleReader = true,
+                SingleWriter = true,
                 AllowSynchronousContinuations = false
             };
 
