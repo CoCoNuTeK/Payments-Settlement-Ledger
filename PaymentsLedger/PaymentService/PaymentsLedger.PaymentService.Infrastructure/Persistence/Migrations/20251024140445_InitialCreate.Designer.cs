@@ -13,8 +13,8 @@ using PaymentsLedger.PaymentService.Infrastructure.Persistence;
 namespace PaymentsLedger.PaymentService.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(PaymentDbContext))]
-    [Migration("20251023160713_AddOutboxIntegrationEvents")]
-    partial class AddOutboxIntegrationEvents
+    [Migration("20251024140445_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
