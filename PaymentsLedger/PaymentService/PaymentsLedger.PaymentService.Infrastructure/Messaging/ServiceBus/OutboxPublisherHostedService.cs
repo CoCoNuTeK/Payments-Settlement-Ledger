@@ -11,7 +11,6 @@ namespace PaymentsLedger.PaymentService.Infrastructure.Messaging.ServiceBus;
 internal sealed class OutboxPublisherHostedService(
     IServiceScopeFactory scopeFactory,
     ServiceBusClient client,
-    IIntegrationEventRouter router,
     ILogger<OutboxPublisherHostedService> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -43,7 +42,7 @@ internal sealed class OutboxPublisherHostedService(
                     {
                         try
                         {
-                            var topicName = router.GetTopicName(evt.EventName);
+                            var topicName = IntegrationEventRouting.GetTopicName(evt.EventName);
                             var sender = client.CreateSender(topicName);
 
                             var message = new ServiceBusMessage(Encoding.UTF8.GetBytes(evt.EventContent))
