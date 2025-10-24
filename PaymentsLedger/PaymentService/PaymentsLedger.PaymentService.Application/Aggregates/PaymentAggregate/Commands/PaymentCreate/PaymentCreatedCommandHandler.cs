@@ -1,5 +1,5 @@
 using PaymentsLedger.PaymentService.Domain.PaymentAggregate;
-using PaymentsLedger.PaymentService.Application.MessagingDefinition;
+using PaymentsLedger.SharedKernel.Messaging;
 using PaymentsLedger.PaymentService.Application.Aggregates.PaymentAggregate.Events.PaymentCreated;
 
 namespace PaymentsLedger.PaymentService.Application.Aggregates.PaymentAggregate.Commands.PaymentCreated;

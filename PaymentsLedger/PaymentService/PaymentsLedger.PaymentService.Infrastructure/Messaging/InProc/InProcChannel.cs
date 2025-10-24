@@ -1,5 +1,5 @@
 using System.Threading.Channels;
-using PaymentsLedger.PaymentService.Application.MessagingDefinition;
+using PaymentsLedger.SharedKernel.Messaging;
 
 namespace PaymentsLedger.PaymentService.Infrastructure.Messaging.InProc;
 

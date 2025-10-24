@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using PaymentsLedger.Blazor.Infrastructure.Messaging.InProc;
 using PaymentsLedger.Blazor.Infrastructure.Messaging.ServiceBus;
+using PaymentsLedger.SharedKernel.Messaging;
 
 namespace PaymentsLedger.Blazor.Infrastructure.Messaging;
 

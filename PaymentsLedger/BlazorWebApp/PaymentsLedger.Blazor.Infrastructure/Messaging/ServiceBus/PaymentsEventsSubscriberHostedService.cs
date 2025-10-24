@@ -2,6 +2,7 @@ using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using PaymentsLedger.Blazor.Infrastructure.Messaging.InProc;
+using PaymentsLedger.SharedKernel.Messaging;
 
 namespace PaymentsLedger.Blazor.Infrastructure.Messaging.ServiceBus;
 

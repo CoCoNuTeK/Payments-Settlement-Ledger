@@ -1,4 +1,5 @@
 using System.Threading.Channels;
+using PaymentsLedger.SharedKernel.Messaging;
 
 namespace PaymentsLedger.Blazor.Infrastructure.Messaging.InProc;
 
@@ -11,4 +12,3 @@ internal sealed class InProcChannel(Channel<InternalMessageEnvelope> channel) : 
         await _channel.Writer.WriteAsync(message, cancellationToken);
     }
 }
-
