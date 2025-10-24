@@ -12,7 +12,7 @@ using PaymentsLedger.Blazor.Infrastructure.Persistence;
 namespace PaymentsLedger.Blazor.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251024140453_InitialCreate")]
+    [Migration("20251024162049_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
