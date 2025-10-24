@@ -13,6 +13,7 @@ internal sealed class OutboxPublisherHostedService(
     ServiceBusClient client,
     ILogger<OutboxPublisherHostedService> logger) : BackgroundService
 {
+    private const int BatchSize = 1; // process strictly one event at a time
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         logger.LogInformation("Outbox publisher started.");
@@ -29,7 +30,7 @@ internal sealed class OutboxPublisherHostedService(
                     var pending = await db.OutboxIntegrationEvents
                         .Where(e => !e.Processed)
                         .OrderBy(e => e.CreatedAtUtc)
-                        .Take(50)
+                        .Take(BatchSize)
                         .ToListAsync(stoppingToken);
 
                     if (pending.Count == 0)
@@ -38,35 +39,33 @@ internal sealed class OutboxPublisherHostedService(
                         continue;
                     }
 
-                    foreach (var evt in pending)
+                    var evt = pending[0];
+                    try
                     {
-                        try
+                        var topicName = IntegrationEventRouting.GetTopicName(evt.EventName);
+                        var sender = client.CreateSender(topicName);
+
+                        var message = new ServiceBusMessage(Encoding.UTF8.GetBytes(evt.EventContent))
                         {
-                            var topicName = IntegrationEventRouting.GetTopicName(evt.EventName);
-                            var sender = client.CreateSender(topicName);
+                            Subject = evt.EventName,
+                            ContentType = "application/json"
+                        };
 
-                            var message = new ServiceBusMessage(Encoding.UTF8.GetBytes(evt.EventContent))
-                            {
-                                Subject = evt.EventName,
-                                ContentType = "application/json"
-                            };
+                        await sender.SendMessageAsync(message, stoppingToken);
 
-                            await sender.SendMessageAsync(message, stoppingToken);
+                        evt.MarkProcessed();
+                        await db.SaveChangesAsync(stoppingToken);
 
-                            evt.MarkProcessed();
-                            await db.SaveChangesAsync(stoppingToken);
-
-                            logger.LogDebug("Published outbox event {EventName} (Id={Id}) to topic {Topic}.", evt.EventName, evt.Id, topicName);
-                        }
-                        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-                        {
-                            break;
-                        }
-                        catch (Exception ex)
-                        {
-                            logger.LogError(ex, "Error publishing outbox event {EventName} (Id={Id}). Will retry next pass.", evt.EventName, evt.Id);
-                            // leave as unprocessed; will retry on next loop
-                        }
+                        logger.LogDebug("Published outbox event {EventName} (Id={Id}) to topic {Topic}.", evt.EventName, evt.Id, topicName);
+                    }
+                    catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                    {
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex, "Error publishing outbox event {EventName} (Id={Id}). Will retry next pass.", evt.EventName, evt.Id);
+                        // leave as unprocessed; will retry on next loop
                     }
                 }
                 catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
