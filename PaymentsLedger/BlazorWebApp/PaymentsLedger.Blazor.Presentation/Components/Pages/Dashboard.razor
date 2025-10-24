@@ -1,10 +1,12 @@
 @page "/dashboard"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 @attribute [Authorize]
 @layout AppLayout
 @using Azure.Messaging.ServiceBus
 @using System.Text.Json
 
 @inject ServiceBusClient Bus
+@inject ILogger<Dashboard> Logger
 
 <h1 class="text-2xl font-semibold text-gray-900">Dashboard</h1>
 
@@ -54,7 +56,8 @@
 
   private Task HandleErrorAsync(ProcessErrorEventArgs args)
   {
-    Console.WriteLine($"ServiceBus error: {args.Exception.Message}");
+    Logger.LogError(args.Exception, "ServiceBus error in Dashboard for entity {EntityPath} (namespace {FullyQualifiedNamespace})",
+      args.EntityPath, args.FullyQualifiedNamespace);
     return Task.CompletedTask;
   }
 

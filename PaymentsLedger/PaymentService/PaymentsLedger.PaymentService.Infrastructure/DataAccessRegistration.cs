@@ -13,7 +13,13 @@ public static class DataAccessRegistration
 {
     public static IHostApplicationBuilder AddInfra(this IHostApplicationBuilder builder)
     {
-        builder.AddNpgsqlDbContext<PaymentDbContext>(connectionName: "paymentsdb");
+        builder.AddNpgsqlDbContext<PaymentDbContext>(
+            connectionName: "paymentsdb",
+            configureDbContextOptions: options =>
+            {
+                // Avoid throwing on PendingModelChangesWarning during runtime migrations
+                options.ConfigureWarnings(w => w.Log(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+            });
         builder.AddAzureServiceBusClient(connectionName: "messaging");
 
         // Messaging (in-proc bus + pumps)

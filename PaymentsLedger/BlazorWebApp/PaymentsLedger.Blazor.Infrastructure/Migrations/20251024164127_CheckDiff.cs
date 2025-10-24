@@ -2,10 +2,10 @@
 
 #nullable disable
 
-namespace PaymentsLedger.PaymentService.Infrastructure.Persistence.Migrations
+namespace PaymentsLedger.Blazor.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class CheckDiff : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

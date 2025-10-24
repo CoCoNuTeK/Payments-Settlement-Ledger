@@ -10,10 +10,10 @@ using PaymentsLedger.PaymentService.Infrastructure.Persistence;
 
 #nullable disable
 
-namespace PaymentsLedger.PaymentService.Infrastructure.Persistence.Migrations
+namespace PaymentsLedger.PaymentService.Infrastructure.Migrations
 {
     [DbContext(typeof(PaymentDbContext))]
-    [Migration("20251024140445_InitialCreate")]
+    [Migration("20251024162144_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />

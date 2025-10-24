@@ -9,7 +9,7 @@ using PaymentsLedger.PaymentService.Infrastructure.Persistence;
 
 #nullable disable
 
-namespace PaymentsLedger.PaymentService.Infrastructure.Persistence.Migrations
+namespace PaymentsLedger.PaymentService.Infrastructure.Migrations
 {
     [DbContext(typeof(PaymentDbContext))]
     partial class PaymentDbContextModelSnapshot : ModelSnapshot
