@@ -2,13 +2,10 @@ using System.Threading.Channels;
 using Aspire.Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using PaymentsLedger.PaymentService.Application.MessagingDefinition;
-using PaymentsLedger.PaymentService.Application.Aggregates.PaymentAggregate.Commands.PaymentCreated;
-using PaymentsLedger.PaymentService.Infrastructure.Messaging.InProc;
-using PaymentsLedger.PaymentService.Infrastructure.Messaging.ServiceBus;
-using PaymentsLedger.PaymentService.Application.Aggregates.PaymentAggregate.Events.PaymentCreated;
+using PaymentsLedger.Blazor.Infrastructure.Messaging.InProc;
+using PaymentsLedger.Blazor.Infrastructure.Messaging.ServiceBus;
 
-namespace PaymentsLedger.PaymentService.Infrastructure;
+namespace PaymentsLedger.Blazor.Infrastructure.Messaging;
 
 public static class MessagingRegistration
 {
@@ -17,7 +14,7 @@ public static class MessagingRegistration
         // Azure Service Bus client (namespace configured in AppHost as "messaging")
         builder.AddAzureServiceBusClient(connectionName: "messaging");
 
-        // In-proc channel for internal messages
+        // In-proc channel (single reader/writer for sequential processing)
         builder.Services.AddSingleton(sp =>
         {
             var options = new BoundedChannelOptions(100)
@@ -27,22 +24,17 @@ public static class MessagingRegistration
                 SingleWriter = true,
                 AllowSynchronousContinuations = false
             };
-
             return Channel.CreateBounded<InternalMessageEnvelope>(options);
         });
 
         // In-proc bus facade
         builder.Services.AddSingleton<IInternalEventBus, InProcChannel>();
 
-        // Register application handlers used by the in-proc messaging system
-        builder.Services.AddScoped<IPaymentCreatedCommandHandler, PaymentCreatedCommandHandler>();
-        builder.Services.AddScoped<IPaymentCreatedEventHandler, PaymentCreatedEventHandler>();
-
-        // Background consumer that drains the channel and invokes handlers
+        // Background pump for in-proc dispatch
         builder.Services.AddHostedService<InProcMessagePump>();
 
-        // Background publisher that reads outbox table and publishes to Service Bus
-        builder.Services.AddHostedService<OutboxPublisherHostedService>();
+        // Subscriber that listens to payments topic subscription and publishes into the in-proc bus
+        builder.Services.AddHostedService<PaymentsEventsSubscriberHostedService>();
 
         return builder;
     }

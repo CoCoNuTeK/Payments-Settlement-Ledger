@@ -6,6 +6,7 @@ using PaymentsLedger.Blazor.Infrastructure.Auth;
 using PaymentsLedger.Blazor.Infrastructure.Persistence;
 using PaymentsLedger.Blazor.Application.Auth;
 using Aspire.Azure.Messaging.ServiceBus;
+using PaymentsLedger.Blazor.Infrastructure.Messaging;
 
 namespace PaymentsLedger.Blazor.Infrastructure;
 
@@ -24,8 +25,8 @@ public static class DataAccessRegistration
                 options.ConfigureWarnings(w => w.Log(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
             });
 
-        // Register Azure Service Bus client (namespace resource name in AppHost is "messaging")
-        builder.AddAzureServiceBusClient(connectionName: "messaging");
+        // Messaging: Service Bus client + in-proc bus + inbox subscriber
+        builder.AddMessaging();
 
         // Auth + IdentityCore wiring; provider-agnostic for Presentation
         builder.Services.AddAuthentication(options =>
