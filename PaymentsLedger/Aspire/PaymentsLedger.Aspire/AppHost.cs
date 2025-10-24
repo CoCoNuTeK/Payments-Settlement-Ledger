@@ -1,9 +1,12 @@
 using Aspire.Hosting.Azure;
+using Aspire.Hosting;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
 // ---------- Presentation (Blazor WASM) ----------
-var blazorPresentation = builder.AddProject<Projects.PaymentsLedger_Blazor_Presentation>("blazor");
+var blazorPresentation = builder
+    .AddProject<Projects.PaymentsLedger_Blazor_Presentation>("blazor")
+    .WithEndpoint(name: "blazor-fixed", scheme: "http", port: 5181);
 var paymentService = builder.AddProject<Projects.PaymentsLedger_PaymentService_Presentation>("payment-service");
 
 // ---------- Datastore (PostgreSQL) ----------

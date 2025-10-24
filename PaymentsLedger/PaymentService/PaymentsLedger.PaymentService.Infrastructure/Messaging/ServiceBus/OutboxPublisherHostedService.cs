@@ -13,7 +13,20 @@ internal sealed class OutboxPublisherHostedService(
     ServiceBusClient client,
     ILogger<OutboxPublisherHostedService> logger) : BackgroundService
 {
-    private const int BatchSize = 1; // process strictly one event at a time
+    private const int BatchSize = 10;
+    private readonly Dictionary<string, ServiceBusSender> _senderCache = new(StringComparer.OrdinalIgnoreCase);
+
+    private ServiceBusSender GetOrCreateSender(string topicName)
+    {
+        if (_senderCache.TryGetValue(topicName, out var sender))
+        {
+            return sender;
+        }
+
+        var created = client.CreateSender(topicName);
+        _senderCache[topicName] = created;
+        return created;
+    }
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         logger.LogInformation("Outbox publisher started.");
@@ -43,7 +56,7 @@ internal sealed class OutboxPublisherHostedService(
                     try
                     {
                         var topicName = IntegrationEventRouting.GetTopicName(evt.EventName);
-                        var sender = client.CreateSender(topicName);
+                        var sender = GetOrCreateSender(topicName);
 
                         var message = new ServiceBusMessage(Encoding.UTF8.GetBytes(evt.EventContent))
                         {
@@ -85,6 +98,10 @@ internal sealed class OutboxPublisherHostedService(
         }
         finally
         {
+            foreach (var s in _senderCache.Values)
+            {
+                try { s.DisposeAsync().AsTask().GetAwaiter().GetResult(); } catch { }
+            }
             logger.LogInformation("Outbox publisher stopped.");
         }
     }
