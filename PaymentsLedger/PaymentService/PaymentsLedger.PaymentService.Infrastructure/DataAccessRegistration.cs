@@ -20,10 +20,8 @@ public static class DataAccessRegistration
                 // Avoid throwing on PendingModelChangesWarning during runtime migrations
                 options.ConfigureWarnings(w => w.Log(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
             });
-        builder.AddAzureServiceBusClient(connectionName: "messaging");
-
-        // Messaging (in-proc bus + pumps)
-        builder.Services.AddInProcMessaging();
+        // Messaging (Service Bus client + in-proc bus + pumps)
+        builder.AddMessaging();
 
         // Repositories
         builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
