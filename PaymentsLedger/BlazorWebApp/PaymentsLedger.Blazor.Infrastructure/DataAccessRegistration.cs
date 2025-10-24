@@ -5,6 +5,7 @@ using PaymentsLedger.Blazor.Infrastructure.Identity;
 using PaymentsLedger.Blazor.Infrastructure.Auth;
 using PaymentsLedger.Blazor.Infrastructure.Persistence;
 using PaymentsLedger.Blazor.Application.Auth;
+using Aspire.Azure.Messaging.ServiceBus;
 
 namespace PaymentsLedger.Blazor.Infrastructure;
 
@@ -16,6 +17,9 @@ public static class DataAccessRegistration
         // database resource name from AppHost ("blazordb"). Aspire supplies the
         // connection string at runtime; design-time uses appsettings/user-secrets.
         builder.AddNpgsqlDbContext<ApplicationDbContext>(connectionName: "blazordb");
+
+        // Register Azure Service Bus client (topic "payments" referenced by AppHost)
+        builder.AddAzureServiceBusClient(connectionName: "payments");
 
         // Auth + IdentityCore wiring; provider-agnostic for Presentation
         builder.Services.AddAuthentication(options =>
@@ -37,9 +41,6 @@ public static class DataAccessRegistration
 
         // App-facing auth abstraction mapping (Application -> Infrastructure)
         builder.Services.AddScoped<IAuthSignInService, AuthSignInService>();
-
-        // Apply migrations + seed identity via hosted service
-        builder.Services.AddHostedService<ApplyMigrationsHostedService>();
 
         return builder;
     }

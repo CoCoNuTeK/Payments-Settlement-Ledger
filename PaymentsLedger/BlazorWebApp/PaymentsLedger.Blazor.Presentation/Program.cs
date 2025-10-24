@@ -15,7 +15,8 @@ builder.Services.AddCascadingAuthenticationState();
 
 var app = builder.Build();
 
-// Migrations + seeding are applied by ApplyMigrationsHostedService in Infrastructure
+// Apply EF Core migrations and seed Identity after build, before run
+await app.Services.ApplyBlazorDbMigrationsAndSeedAsync();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
