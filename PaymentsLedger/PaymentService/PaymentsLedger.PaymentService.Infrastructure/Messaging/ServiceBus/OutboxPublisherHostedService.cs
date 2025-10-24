@@ -1,6 +1,5 @@
 using System.Text;
 using Azure.Messaging.ServiceBus;
-using Npgsql;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -70,12 +69,6 @@ internal sealed class OutboxPublisherHostedService(
                             // leave as unprocessed; will retry on next loop
                         }
                     }
-                }
-                catch (PostgresException pex) when (pex.SqlState == "42P01")
-                {
-                    // Outbox table not created yet (migrations not applied). Wait and retry.
-                    logger.LogInformation("Outbox table not found yet. Waiting for migrations to complete before retrying.");
-                    await Task.Delay(TimeSpan.FromSeconds(3), stoppingToken);
                 }
                 catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
                 {
