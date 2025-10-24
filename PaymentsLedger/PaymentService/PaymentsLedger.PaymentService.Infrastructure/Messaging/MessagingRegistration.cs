@@ -31,9 +31,6 @@ public static class MessagingRegistration
         services.AddScoped<IPaymentCreatedCommandHandler, PaymentCreatedCommandHandler>();
         services.AddScoped<IPaymentCreatedEventHandler, PaymentCreatedEventHandler>();
 
-        // Routing for external integration events (eventName -> topic/queue)
-        services.AddSingleton<IIntegrationEventRouter, StaticIntegrationEventRouter>();
-        
         // Background consumer that drains the channel and invokes handlers
         services.AddHostedService<InProcMessagePump>();
 

@@ -18,8 +18,8 @@ public static class DataAccessRegistration
         // connection string at runtime; design-time uses appsettings/user-secrets.
         builder.AddNpgsqlDbContext<ApplicationDbContext>(connectionName: "blazordb");
 
-        // Register Azure Service Bus client (topic "payments" referenced by AppHost)
-        builder.AddAzureServiceBusClient(connectionName: "payments");
+        // Register Azure Service Bus client (namespace resource name in AppHost is "messaging")
+        builder.AddAzureServiceBusClient(connectionName: "messaging");
 
         // Auth + IdentityCore wiring; provider-agnostic for Presentation
         builder.Services.AddAuthentication(options =>

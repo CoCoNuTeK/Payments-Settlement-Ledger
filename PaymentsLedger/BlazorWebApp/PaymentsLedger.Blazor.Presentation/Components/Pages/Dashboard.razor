@@ -1,12 +1,27 @@
 @page "/dashboard"
 @attribute [Authorize]
 @layout AppLayout
+@using Azure.Messaging.ServiceBus
+@using System.Text.Json
+
+@inject ServiceBusClient Bus
 
 <h1 class="text-2xl font-semibold text-gray-900">Dashboard</h1>
 
 <AuthorizeView>
   <Authorized>
-    <p class="mt-4 text-gray-700">Hello, @context.User.Identity?.Name!</p>
+    <div class="mt-4 space-y-2">
+      <p class="text-gray-700">Hello, @context.User.Identity?.Name!</p>
+      <p class="text-gray-700">Payments received (session): <span class="font-semibold">@_receivedCount</span></p>
+      <p class="text-gray-700">Total amount: <span class="font-semibold">@_totalAmount</span> @_lastCurrency</p>
+      @if (!string.IsNullOrEmpty(_lastEventJson))
+      {
+        <details class="mt-2">
+          <summary class="cursor-pointer text-sm text-gray-600">Last event payload</summary>
+          <pre class="bg-gray-50 p-2 rounded text-xs overflow-auto">@_lastEventJson</pre>
+        </details>
+      }
+    </div>
   </Authorized>
   <NotAuthorized>
     <p class="mt-4 text-red-600">You're not authorized.</p>
@@ -15,3 +30,68 @@
     <p class="mt-4 text-gray-500">Authorizing...</p>
   </Authorizing>
 </AuthorizeView>
+
+@code {
+  private ServiceBusProcessor? _processor;
+  private int _receivedCount;
+  private decimal _totalAmount;
+  private string _lastCurrency = string.Empty;
+  private string? _lastEventJson;
+
+  protected override async Task OnInitializedAsync()
+  {
+    // Listen to topic "payments" and subscription "blazor-sub"
+    _processor = Bus.CreateProcessor("payments", "blazor-sub", new ServiceBusProcessorOptions
+    {
+      AutoCompleteMessages = true,
+      MaxConcurrentCalls = 1
+    });
+
+    _processor.ProcessMessageAsync += HandleMessageAsync;
+    _processor.ProcessErrorAsync += HandleErrorAsync;
+    await _processor.StartProcessingAsync();
+  }
+
+  private Task HandleErrorAsync(ProcessErrorEventArgs args)
+  {
+    Console.WriteLine($"ServiceBus error: {args.Exception.Message}");
+    return Task.CompletedTask;
+  }
+
+  private async Task HandleMessageAsync(ProcessMessageEventArgs args)
+  {
+    var body = args.Message.Body.ToString();
+    _lastEventJson = body;
+    try
+    {
+      using var doc = JsonDocument.Parse(body);
+      if (doc.RootElement.TryGetProperty("Amount", out var amountObj))
+      {
+        if (amountObj.TryGetProperty("Amount", out var amountProp))
+        {
+          _totalAmount += amountProp.GetDecimal();
+        }
+        if (amountObj.TryGetProperty("Currency", out var currencyProp))
+        {
+          _lastCurrency = currencyProp.GetString() ?? string.Empty;
+        }
+      }
+    }
+    catch
+    {
+      // ignore parsing errors in this quick demo
+    }
+
+    _receivedCount++;
+    await InvokeAsync(StateHasChanged);
+  }
+
+  public async ValueTask DisposeAsync()
+  {
+    if (_processor is not null)
+    {
+      await _processor.StopProcessingAsync();
+      await _processor.DisposeAsync();
+    }
+  }
+}

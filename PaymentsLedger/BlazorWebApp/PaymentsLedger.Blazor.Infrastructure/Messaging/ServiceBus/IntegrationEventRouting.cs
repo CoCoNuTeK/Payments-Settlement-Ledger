@@ -1,4 +1,4 @@
-namespace PaymentsLedger.PaymentService.Infrastructure.Messaging.ServiceBus;
+namespace PaymentsLedger.Blazor.Infrastructure.Messaging.ServiceBus;
 
 public static class IntegrationEventRouting
 {
@@ -26,3 +26,4 @@ public static class IntegrationEventRouting
     public static bool TryGetTopicName(string eventName, out string topicName)
         => Map.TryGetValue(eventName, out topicName!);
 }
+
