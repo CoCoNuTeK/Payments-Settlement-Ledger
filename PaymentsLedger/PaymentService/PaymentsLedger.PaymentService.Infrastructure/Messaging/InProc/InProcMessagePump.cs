@@ -2,7 +2,7 @@ using System.Threading.Channels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using PaymentsLedger.PaymentService.Application.MessagingDefinition;
+using PaymentsLedger.SharedKernel.Messaging;
 
 namespace PaymentsLedger.PaymentService.Infrastructure.Messaging.InProc;
 

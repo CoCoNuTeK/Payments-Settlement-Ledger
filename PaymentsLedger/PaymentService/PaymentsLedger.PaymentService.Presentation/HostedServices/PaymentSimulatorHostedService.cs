@@ -2,7 +2,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using PaymentsLedger.PaymentService.Presentation.DTO;
-using PaymentsLedger.PaymentService.Application.MessagingDefinition;
+using PaymentsLedger.SharedKernel.Messaging;
 using PaymentsLedger.PaymentService.Application.Aggregates.PaymentAggregate.Commands.PaymentCreated;
 
 namespace PaymentsLedger.PaymentService.Presentation.HostedServices;

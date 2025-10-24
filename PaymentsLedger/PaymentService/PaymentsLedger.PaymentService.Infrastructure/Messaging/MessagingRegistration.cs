@@ -2,7 +2,7 @@ using System.Threading.Channels;
 using Aspire.Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using PaymentsLedger.PaymentService.Application.MessagingDefinition;
+using PaymentsLedger.SharedKernel.Messaging;
 using PaymentsLedger.PaymentService.Application.Aggregates.PaymentAggregate.Commands.PaymentCreated;
 using PaymentsLedger.PaymentService.Infrastructure.Messaging.InProc;
 using PaymentsLedger.PaymentService.Infrastructure.Messaging.ServiceBus;

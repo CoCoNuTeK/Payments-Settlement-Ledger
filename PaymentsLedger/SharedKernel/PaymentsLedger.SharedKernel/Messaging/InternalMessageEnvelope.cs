@@ -1,4 +1,4 @@
-namespace PaymentsLedger.Blazor.Infrastructure.Messaging.InProc;
+namespace PaymentsLedger.SharedKernel.Messaging;
 
 public sealed class InternalMessageEnvelope(
     object payload,
