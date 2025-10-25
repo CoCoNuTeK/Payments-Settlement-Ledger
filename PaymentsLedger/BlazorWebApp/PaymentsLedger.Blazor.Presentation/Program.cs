@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using PaymentsLedger.Blazor.Presentation.Components;
 using PaymentsLedger.Blazor.Infrastructure;
 using PaymentsLedger.Blazor.Infrastructure.Persistence;
+using PaymentsLedger.Blazor.Application.UI.Events;
+using PaymentsLedger.Blazor.Presentation.UI.Events;
 var builder = WebApplication.CreateBuilder(args);
 
 // Infrastructure wiring (Aspire-backed Npgsql, DbContext, Identity)
@@ -12,6 +14,9 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddCascadingAuthenticationState();
+
+// UI event handler service for live dashboard updates
+builder.Services.AddSingleton<IPaymentsEventHandler, PaymentsEventHandler>();
 
 var app = builder.Build();
 

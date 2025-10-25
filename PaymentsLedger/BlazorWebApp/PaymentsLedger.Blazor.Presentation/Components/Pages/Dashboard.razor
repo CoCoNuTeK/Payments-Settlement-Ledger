@@ -2,26 +2,35 @@
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @attribute [Authorize]
 @layout AppLayout
-@using Azure.Messaging.ServiceBus
-@using System.Text.Json
-
-@inject ServiceBusClient Bus
 @inject ILogger<Dashboard> Logger
+@inject IPaymentsEventHandler Events
+@using System.Security.Claims
 
 <h1 class="text-2xl font-semibold text-gray-900">Dashboard</h1>
 
 <AuthorizeView>
   <Authorized>
+    @{
+      var merchantId = MapUserToMerchant(context.User);
+      var stats = merchantId.HasValue ? Events.GetStats(merchantId.Value) : default(PaymentStats);
+    }
     <div class="mt-4 space-y-2">
       <p class="text-gray-700">Hello, @context.User.Identity?.Name!</p>
-      <p class="text-gray-700">Payments received (session): <span class="font-semibold">@_receivedCount</span></p>
-      <p class="text-gray-700">Total amount: <span class="font-semibold">@_totalAmount</span> @_lastCurrency</p>
-      @if (!string.IsNullOrEmpty(_lastEventJson))
+      @if (merchantId is null)
       {
-        <details class="mt-2">
-          <summary class="cursor-pointer text-sm text-gray-600">Last event payload</summary>
-          <pre class="bg-gray-50 p-2 rounded text-xs overflow-auto">@_lastEventJson</pre>
-        </details>
+        <p class="text-red-600">No merchant mapping for this user in demo.</p>
+      }
+      else
+      {
+        <p class="text-gray-700">Payments received: <span class="font-semibold">@stats.ReceivedCount</span></p>
+        <p class="text-gray-700">Total amount: <span class="font-semibold">@stats.TotalAmount</span> @stats.LastCurrency</p>
+        @if (!string.IsNullOrEmpty(stats.LastEventJson))
+        {
+          <details class="mt-2">
+            <summary class="cursor-pointer text-sm text-gray-600">Last event payload</summary>
+            <pre class="bg-gray-50 p-2 rounded text-xs overflow-auto">@stats.LastEventJson</pre>
+          </details>
+        }
       }
     </div>
   </Authorized>
@@ -34,67 +43,34 @@
 </AuthorizeView>
 
 @code {
-  private ServiceBusProcessor? _processor;
-  private int _receivedCount;
-  private decimal _totalAmount;
-  private string _lastCurrency = string.Empty;
-  private string? _lastEventJson;
+  private IDisposable? _sub;
 
-  protected override async Task OnInitializedAsync()
+  protected override Task OnInitializedAsync()
   {
-    // Listen to topic "payments" and subscription "blazor-sub"
-    _processor = Bus.CreateProcessor("payments", "blazor-sub", new ServiceBusProcessorOptions
-    {
-      AutoCompleteMessages = true,
-      MaxConcurrentCalls = 1
-    });
-
-    _processor.ProcessMessageAsync += HandleMessageAsync;
-    _processor.ProcessErrorAsync += HandleErrorAsync;
-    await _processor.StartProcessingAsync();
-  }
-
-  private Task HandleErrorAsync(ProcessErrorEventArgs args)
-  {
-    Logger.LogError(args.Exception, "ServiceBus error in Dashboard for entity {EntityPath} (namespace {FullyQualifiedNamespace})",
-      args.EntityPath, args.FullyQualifiedNamespace);
+    // Subscribe to changes from the shared handler
+    Events.Changed += OnEventsChanged;
     return Task.CompletedTask;
   }
 
-  private async Task HandleMessageAsync(ProcessMessageEventArgs args)
+  private void OnEventsChanged()
   {
-    var body = args.Message.Body.ToString();
-    _lastEventJson = body;
-    try
-    {
-      using var doc = JsonDocument.Parse(body);
-      if (doc.RootElement.TryGetProperty("Amount", out var amountObj))
-      {
-        if (amountObj.TryGetProperty("Amount", out var amountProp))
-        {
-          _totalAmount += amountProp.GetDecimal();
-        }
-        if (amountObj.TryGetProperty("Currency", out var currencyProp))
-        {
-          _lastCurrency = currencyProp.GetString() ?? string.Empty;
-        }
-      }
-    }
-    catch
-    {
-      // ignore parsing errors in this quick demo
-    }
-
-    _receivedCount++;
-    await InvokeAsync(StateHasChanged);
+    _ = InvokeAsync(StateHasChanged);
   }
 
   public async ValueTask DisposeAsync()
   {
-    if (_processor is not null)
+    Events.Changed -= OnEventsChanged;
+  }
+
+  private static Guid? MapUserToMerchant(ClaimsPrincipal user)
+  {
+    var name = user.Identity?.Name?.Trim().ToLowerInvariant();
+    return name switch
     {
-      await _processor.StopProcessingAsync();
-      await _processor.DisposeAsync();
-    }
+      // Demo mapping: standard -> 2222..., premium -> 1111...
+      "standard@demo.local" => Guid.Parse("22222222-2222-2222-2222-222222222222"),
+      "premium@demo.local" => Guid.Parse("11111111-1111-1111-1111-111111111111"),
+      _ => null
+    };
   }
 }
