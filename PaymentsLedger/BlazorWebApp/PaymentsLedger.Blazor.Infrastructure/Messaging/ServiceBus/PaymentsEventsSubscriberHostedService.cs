@@ -55,17 +55,23 @@ internal sealed class PaymentsEventsSubscriberHostedService(
 
     private async Task OnMessageAsync(ProcessMessageEventArgs args)
     {
+        var subject = args.Message.Subject;
         var body = args.Message.Body.ToString();
 
-        var envelope = new InternalMessageEnvelope(
-            payload: body,
-            handler: async (sp, ct) =>
-            {
-                // Default no-op handler; will be replaced by concrete handlers as needed
-                logger.LogInformation("Inbox received message with Subject {Subject}", args.Message.Subject);
-                await Task.CompletedTask;
-            });
+        if (IncomingIntegrationEventRouting.TryGetHandler(subject, out var invoker))
+        {
+            var envelope = new InternalMessageEnvelope(
+                payload: body,
+                handler: (sp, ct) => invoker(sp, subject, body, ct));
 
-        await bus.PublishAsync(envelope);
+            await bus.PublishAsync(envelope);
+            return;
+        }
+
+        // No mapping found: log and skip (no default handler)
+        logger.LogWarning(
+            "No handler mapping found for incoming event. Subject={Subject} MessageId={MessageId}",
+            subject,
+            args.Message.MessageId);
     }
 }

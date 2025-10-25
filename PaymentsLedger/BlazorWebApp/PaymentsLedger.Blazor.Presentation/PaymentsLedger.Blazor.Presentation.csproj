@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../PaymentsLedger.Blazor.Infrastructure/PaymentsLedger.Blazor.Infrastructure.csproj" />
+    <ProjectReference Include="../PaymentsLedger.Blazor.Application/PaymentsLedger.Blazor.Application.csproj" />
   </ItemGroup>
 
 </Project>
