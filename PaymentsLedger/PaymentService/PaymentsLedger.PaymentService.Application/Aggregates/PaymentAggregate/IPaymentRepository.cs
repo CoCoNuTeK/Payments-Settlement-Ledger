@@ -4,6 +4,6 @@ namespace PaymentsLedger.PaymentService.Application.Aggregates.PaymentAggregate;
 
 public interface IPaymentRepository
 {
-    Task AddAsync(Payment payment, CancellationToken cancellationToken = default);
-    Task AddOutboxEventAsync(string eventName, string eventContent, CancellationToken cancellationToken = default);
+    // Adds the payment and an associated outbox integration event atomically
+    Task AddAsync(Payment payment, string outboxEventName, string outboxEventContent, CancellationToken cancellationToken = default);
 }

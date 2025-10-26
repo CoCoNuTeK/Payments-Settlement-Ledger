@@ -1,3 +1,4 @@
 {
-  "dotnet.defaultSolution": "PaymentsLedger.sln"
+  "dotnet.defaultSolution": "PaymentsLedger.sln",
+  "chatgpt.commentCodeLensEnabled": true
 }
