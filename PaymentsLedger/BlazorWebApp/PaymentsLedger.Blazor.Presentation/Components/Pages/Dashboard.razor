@@ -5,25 +5,102 @@
 @inject ILogger<Dashboard> Logger
 @inject IPaymentsEventHandler Events
 @using System.Security.Claims
+@using PaymentsLedger.SharedKernel.Contracts.IntegrationEvents
 
 <h1 class="text-2xl font-semibold text-gray-900">Dashboard</h1>
 
 <AuthorizeView>
-  <Authorized>
+  <Authorized Context="auth">
     @{
-      var merchantId = MapUserToMerchant(context.User);
+      var merchantId = MapUserToMerchant(auth.User);
+      _currentMerchantId = merchantId; // capture for event updates
       var stats = merchantId.HasValue ? Events.GetStats(merchantId.Value) : default(PaymentStats);
     }
-    <div class="mt-4 space-y-2">
-      <p class="text-gray-700">Hello, @context.User.Identity?.Name!</p>
+
+    <!-- Role-specific greeting -->
+    <div class="mt-4">
+      <AuthorizeView Roles="Premium">
+        <p class="text-emerald-700 font-semibold">Hello, premium user!</p>
+      </AuthorizeView>
+      <AuthorizeView Roles="Standard">
+        <p class="text-sky-700 font-semibold">Hello, standard user!</p>
+      </AuthorizeView>
+      @if (!(auth.User.IsInRole("Premium") || auth.User.IsInRole("Standard")))
+      {
+        <p class="text-gray-700">Hello, @auth.User.Identity?.Name!</p>
+      }
+    </div>
+
+    <div class="mt-4 space-y-3">
       @if (merchantId is null)
       {
         <p class="text-red-600">No merchant mapping for this user in demo.</p>
       }
       else
       {
-        <p class="text-gray-700">Payments received: <span class="font-semibold">@stats.ReceivedCount</span></p>
-        <p class="text-gray-700">Total amount: <span class="font-semibold">@stats.TotalAmount</span> @stats.LastCurrency</p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div class="bg-white border rounded p-3">
+            <p class="text-sm text-gray-500">Payments received</p>
+            <p class="text-2xl font-semibold text-gray-900">@stats.ReceivedCount</p>
+          </div>
+          <div class="bg-white border rounded p-3">
+            <p class="text-sm text-gray-500">Total amount</p>
+            <p class="text-2xl font-semibold text-gray-900">@stats.TotalAmount <span class="text-base text-gray-600">@stats.LastCurrency</span></p>
+          </div>
+          <div class="bg-white border rounded p-3">
+            <p class="text-sm text-gray-500">Last update</p>
+            <p class="text-2xl font-semibold text-gray-900">@(_points.Count > 0 ? _points[^1].CreatedAtLocal.ToString("HH:mm:ss") : "-")</p>
+          </div>
+        </div>
+
+        <!-- Simple bar chart: X = time, Y = amount -->
+        <div class="bg-white border rounded p-4 mt-2">
+          <div class="flex items-center justify-between mb-2">
+            <h2 class="text-sm font-semibold text-gray-700">Payments over time</h2>
+            <span class="text-xs text-gray-500">last @_points.Count events</span>
+          </div>
+          @{
+            var max = _points.Count == 0 ? 0m : _points.Max(p => p.Amount);
+            var maxLabel = max.ToString("0.##");
+          }
+          <div class="grid grid-cols-12 gap-2">
+            <div class="col-span-12">
+              <div class="relative h-48">
+                <!-- Y-axis labels (top/bottom) -->
+                <div class="absolute left-0 top-0 text-[10px] text-gray-500">@maxLabel</div>
+                <div class="absolute left-0 bottom-0 text-[10px] text-gray-500">0</div>
+                <!-- Bars -->
+                <div class="absolute inset-0 ml-12 overflow-x-auto">
+                  <div class="absolute inset-0 border-l border-gray-200"></div>
+                  <div class="h-full flex items-end space-x-2 pr-6 pl-3 md:pl-4 whitespace-nowrap">
+                    @foreach (var p in _points)
+                    {
+                      var h = max > 0 ? (int)Math.Round((p.Amount / max) * 100m) : 0;
+                      <div class="group relative flex-none w-4 md:w-5 min-w-[12px] bg-white border border-indigo-200 shadow-sm rounded-sm hover:bg-indigo-50"
+                           style="height:@(h)%">
+                        <div class="absolute inset-0 hidden group-hover:flex items-center justify-center">
+                          <span class="text-[10px] font-semibold text-black select-none">@p.Amount</span>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- X-axis labels -->
+            <div class="col-span-12 mt-1 ml-12">
+              <div class="overflow-x-auto">
+                <div class="flex items-center text-[10px] text-gray-500 space-x-2 pr-6 pl-3 md:pl-4 whitespace-nowrap">
+                  @for (int i = 0; i < _points.Count; i++)
+                  {
+                    <span class="block w-4 md:w-5 flex-none text-center">@($"e{(i + 1)}")</span>
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         @if (!string.IsNullOrEmpty(stats.LastEventJson))
         {
           <details class="mt-2">
@@ -43,8 +120,6 @@
 </AuthorizeView>
 
 @code {
-  private IDisposable? _sub;
-
   protected override Task OnInitializedAsync()
   {
     // Subscribe to changes from the shared handler
@@ -54,7 +129,30 @@
 
   private void OnEventsChanged()
   {
-    _ = InvokeAsync(StateHasChanged);
+    // Append latest event to local chart if it matches current merchant
+    InvokeAsync(() =>
+    {
+      if (_currentMerchantId is null)
+      {
+        StateHasChanged();
+        return;
+      }
+      var stats = Events.GetStats(_currentMerchantId.Value);
+      if (!string.IsNullOrEmpty(stats.LastEventJson))
+      {
+        try
+        {
+          var evt = System.Text.Json.JsonSerializer.Deserialize<PaymentCreatedEvent>(stats.LastEventJson);
+          if (evt is not null && evt.MerchantId == _currentMerchantId.Value && _seen.Add(evt.PaymentId))
+          {
+            _points.Add(new ChartPoint(evt.CreatedAtUtc.ToLocalTime(), evt.Amount));
+            if (_points.Count > MaxPoints) _points.RemoveAt(0);
+          }
+        }
+        catch { }
+      }
+      StateHasChanged();
+    });
   }
 
   public async ValueTask DisposeAsync()
@@ -73,4 +171,13 @@
       _ => null
     };
   }
+
+  // Local chart state for the current session
+  private const int MaxPoints = 20;
+  private readonly List<ChartPoint> _points = new();
+  private readonly HashSet<Guid> _seen = new();
+  private record struct ChartPoint(DateTime CreatedAtLocal, decimal Amount);
+  private Guid? _currentMerchantId;
+
+
 }
