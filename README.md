@@ -17,6 +17,37 @@ A small event‑driven sample that simulates payments and streams live updates t
 - Event‑driven pub/sub architecture
 - In‑process channel bus for UI updates (communication inside of microservice)
 
+## Observability (OpenTelemetry + Aspire)
+
+- End‑to‑end tracing is wired using OpenTelemetry and shows up automatically in the Aspire dashboard.
+- No local config required: Aspire sets OTEL_* env vars (service name/instance and `OTEL_EXPORTER_OTLP_ENDPOINT`).
+
+What you’ll see in Traces (core flow)
+- Payment Service
+  - `presentation.payment.create` (producer, Presentation)
+  - `inproc.message.process` (consumer, Infrastructure)
+  - `application.payment.persist` (consumer, Application)
+  - `infrastructure.payment.persist` (internal, Infrastructure) + EF Core DB spans (`paymentsdb`)
+  - `servicebus.outbox.publish` (producer, Infrastructure) linked to the application span (across outbox boundary)
+- Blazor
+  - `servicebus.message.receive` (consumer, Infrastructure) linked to the publisher span
+  - `inproc.message.process` (consumer, Infrastructure)
+  - `presentation.payments.event.handle` (internal, Presentation)
+
+How correlation works
+- In‑proc: we pass `ActivityContext` through the internal envelope; consumer spans are true children.
+- Outbox: we persist W3C `traceparent`/`tracestate` with each outbox row and create an ActivityLink on publish to relate traces across the async boundary.
+
+Custom metrics
+- Counter `payments.created` (Meter: `PaymentsLedger.PaymentService.Infrastructure`) increments after a successful payment persist.
+
+Where it’s wired
+- Payment Service OTel: `PaymentsLedger/PaymentService/PaymentsLedger.PaymentService.Infrastructure/Observability/ObservabilityRegistration.cs`
+- Blazor OTel: `PaymentsLedger/BlazorWebApp/PaymentsLedger.Blazor.Infrastructure/Observability/ObservabilityRegistration.cs`
+
+Prod note
+- Point `OTEL_EXPORTER_OTLP_ENDPOINT` at an in‑cluster OpenTelemetry Collector (or a managed backend). Sampling is 100% in dev; consider reducing in prod.
+
 ## Overview
 
 - Solution layout
