@@ -108,6 +108,7 @@ Prod note
   - Two local PostgreSQL databases (Blazor Identity + Payments) run in containers.
   - Azure Service Bus runs as a local emulator via Aspire.
   - A background simulator in the Payment Service keeps generating payments.
+  - Heads‑up: the simulator publishes ~10 payments every 10 seconds (~1/sec). Don’t leave it running for long test sessions or your local DB and traces will grow quickly.
 
 ## Notable Files
 
