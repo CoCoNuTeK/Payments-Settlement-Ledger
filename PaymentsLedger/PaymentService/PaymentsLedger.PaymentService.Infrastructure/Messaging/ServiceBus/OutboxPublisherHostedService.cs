@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text;
 using Azure.Messaging.ServiceBus;
 using Microsoft.EntityFrameworkCore;
@@ -13,6 +14,7 @@ internal sealed class OutboxPublisherHostedService(
     ServiceBusClient client,
     ILogger<OutboxPublisherHostedService> logger) : BackgroundService
 {
+    private static readonly ActivitySource ActivitySource = new("PaymentsLedger.PaymentService.Infrastructure");
     private const int BatchSize = 10;
     private readonly Dictionary<string, ServiceBusSender> _senderCache = new(StringComparer.OrdinalIgnoreCase);
 
@@ -61,15 +63,69 @@ internal sealed class OutboxPublisherHostedService(
                         var message = new ServiceBusMessage(Encoding.UTF8.GetBytes(evt.EventContent))
                         {
                             Subject = evt.EventName,
-                            ContentType = "application/json"
+                            ContentType = "application/json",
+                            MessageId = evt.Id.ToString()
                         };
+
+                        // Build ActivityLink from outbox stored W3C headers to relate this publish to the handler span
+                        var headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                        if (!string.IsNullOrWhiteSpace(evt.TraceParent)) headers["traceparent"] = evt.TraceParent!;
+                        if (!string.IsNullOrWhiteSpace(evt.TraceState)) headers["tracestate"] = evt.TraceState!;
+                        var parent = OpenTelemetry.Context.Propagation.Propagators.DefaultTextMapPropagator.Extract(
+                            default,
+                            headers,
+                            static (carrier, key) => carrier.TryGetValue(key, out var v) ? new[] { v } : Array.Empty<string>());
+                        var links = parent.ActivityContext != default
+                            ? new[] { new ActivityLink(parent.ActivityContext) }
+                            : Array.Empty<ActivityLink>();
+
+                        using var activity = ActivitySource.StartActivity(
+                            "servicebus.outbox.publish",
+                            ActivityKind.Producer,
+                            parentContext: default,
+                            tags: null,
+                            links: links);
+
+                        activity?.SetTag("app.layer", "Infrastructure");
+                        activity?.SetTag("messaging.system", "azureservicebus");
+                        activity?.SetTag("messaging.destination.kind", "topic");
+                        activity?.SetTag("messaging.destination.name", topicName);
+                        activity?.SetTag("messaging.operation", "publish");
+                        activity?.SetTag("messaging.message_id", message.MessageId);
+                        activity?.SetTag("messaging.message.conversation_id", evt.Id.ToString());
+                        activity?.AddEvent(new ActivityEvent(
+                            "outbox.event.ready",
+                            tags: new ActivityTagsCollection
+                            {
+                                ["event.name"] = evt.EventName,
+                                ["event.id"] = evt.Id.ToString(),
+                                ["topic"] = topicName
+                            }));
 
                         await sender.SendMessageAsync(message, stoppingToken);
 
                         evt.MarkProcessed();
                         await db.SaveChangesAsync(stoppingToken);
 
-                        logger.LogDebug("Published outbox event {EventName} (Id={Id}) to topic {Topic}.", evt.EventName, evt.Id, topicName);
+                        activity?.AddEvent(new ActivityEvent(
+                            "outbox.event.published",
+                            tags: new ActivityTagsCollection
+                            {
+                                ["event.name"] = evt.EventName,
+                                ["event.id"] = evt.Id.ToString(),
+                                ["topic"] = topicName
+                            }));
+
+                        // Prefer Activity event over debug log
+                        activity?.AddEvent(new ActivityEvent(
+                            "outbox.event.debug",
+                            tags: new ActivityTagsCollection
+                            {
+                                ["event.name"] = evt.EventName,
+                                ["event.id"] = evt.Id.ToString(),
+                                ["topic"] = topicName,
+                                ["message.id"] = message.MessageId
+                            }));
                     }
                     catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
                     {
@@ -77,7 +133,24 @@ internal sealed class OutboxPublisherHostedService(
                     }
                     catch (Exception ex)
                     {
-                        logger.LogError(ex, "Error publishing outbox event {EventName} (Id={Id}). Will retry next pass.", evt.EventName, evt.Id);
+                        Activity.Current?.AddEvent(new ActivityEvent(
+                            "outbox.event.error",
+                            tags: new ActivityTagsCollection
+                            {
+                                ["event.id"] = evt.Id.ToString(),
+                                ["exception.type"] = ex.GetType().FullName,
+                                ["exception.message"] = ex.Message
+                            }));
+                        // Prefer Activity event over error log; keeping entity unprocessed for retry
+                        Activity.Current?.AddEvent(new ActivityEvent(
+                            "outbox.event.error",
+                            tags: new ActivityTagsCollection
+                            {
+                                ["event.name"] = evt.EventName,
+                                ["event.id"] = evt.Id.ToString(),
+                                ["exception.type"] = ex.GetType().FullName,
+                                ["exception.message"] = ex.Message
+                            }));
                         // leave as unprocessed; will retry on next loop
                     }
                 }
@@ -87,7 +160,14 @@ internal sealed class OutboxPublisherHostedService(
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError(ex, "Unexpected error in outbox publisher loop. Retrying shortly.");
+                    using var activity = ActivitySource.StartActivity("servicebus.outbox.loop");
+                    activity?.AddEvent(new ActivityEvent(
+                        "outbox.loop.error",
+                        tags: new ActivityTagsCollection
+                        {
+                            ["exception.type"] = ex.GetType().FullName,
+                            ["exception.message"] = ex.Message
+                        }));
                     await Task.Delay(TimeSpan.FromSeconds(3), stoppingToken);
                 }
             }

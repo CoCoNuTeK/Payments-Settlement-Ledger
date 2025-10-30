@@ -71,6 +71,14 @@ internal sealed class PaymentSimulatorHostedService(
                             ["payment.currency"] = currency
                         }));
 
+                    // Attach parent context directly for in-proc parent/child correlation
+                    envelope = new InternalMessageEnvelope(
+                        payload: payment,
+                        handler: envelope.Handler,
+                        id: envelope.Id,
+                        createdAtUtc: envelope.CreatedAtUtc,
+                        parentContext: Activity.Current?.Context);
+
                     await bus.PublishAsync(envelope, stoppingToken);
                 }
                 // Pace: 10 payments every 10 seconds

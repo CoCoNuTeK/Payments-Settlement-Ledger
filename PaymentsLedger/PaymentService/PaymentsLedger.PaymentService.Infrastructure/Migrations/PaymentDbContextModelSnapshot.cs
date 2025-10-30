@@ -77,6 +77,12 @@ namespace PaymentsLedger.PaymentService.Infrastructure.Migrations
                     b.Property<DateTimeOffset?>("ProcessedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("TraceParent")
+                        .HasColumnType("text");
+
+                    b.Property<string>("TraceState")
+                        .HasColumnType("text");
+
                     b.HasKey("Id");
 
                     b.ToTable("OutboxIntegrationEvents");

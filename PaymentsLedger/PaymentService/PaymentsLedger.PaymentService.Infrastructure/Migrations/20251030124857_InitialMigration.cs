@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace PaymentsLedger.PaymentService.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class InitialMigration : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -18,6 +18,8 @@ namespace PaymentsLedger.PaymentService.Infrastructure.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     EventName = table.Column<string>(type: "text", nullable: false),
                     EventContent = table.Column<string>(type: "text", nullable: false),
+                    TraceParent = table.Column<string>(type: "text", nullable: true),
+                    TraceState = table.Column<string>(type: "text", nullable: true),
                     CreatedAtUtc = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     Processed = table.Column<bool>(type: "boolean", nullable: false),
                     ProcessedAtUtc = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)

@@ -13,8 +13,8 @@ using PaymentsLedger.PaymentService.Infrastructure.Persistence;
 namespace PaymentsLedger.PaymentService.Infrastructure.Migrations
 {
     [DbContext(typeof(PaymentDbContext))]
-    [Migration("20251024162144_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20251030124857_InitialMigration")]
+    partial class InitialMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -79,6 +79,12 @@ namespace PaymentsLedger.PaymentService.Infrastructure.Migrations
 
                     b.Property<DateTimeOffset?>("ProcessedAtUtc")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("TraceParent")
+                        .HasColumnType("text");
+
+                    b.Property<string>("TraceState")
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 

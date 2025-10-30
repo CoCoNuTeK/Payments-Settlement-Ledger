@@ -38,8 +38,10 @@ public static class ObservabilityRegistration
                     .AddAspNetCoreInstrumentation()
                     .AddHttpClientInstrumentation()
                     .AddEntityFrameworkCoreInstrumentation()
-                    // Capture custom Activities created with our ActivitySource
+                    // Capture custom Activities created with our ActivitySources
                     .AddSource("PaymentsLedger.PaymentService.Presentation")
+                    .AddSource("PaymentsLedger.PaymentService.Application")
+                    .AddSource("PaymentsLedger.PaymentService.Infrastructure")
                     .AddOtlpExporter();
             })
             .WithMetrics(meter =>
@@ -49,10 +51,22 @@ public static class ObservabilityRegistration
                     .AddHttpClientInstrumentation()
                     .AddRuntimeInstrumentation()
                     .AddProcessInstrumentation()
+                    // Capture custom metrics emitted from our Meter(s)
+                    .AddMeter("PaymentsLedger.PaymentService.Infrastructure")
                     .AddOtlpExporter();
             });
 
         // Logs via OpenTelemetry
+        builder.Logging.AddOpenTelemetry(logging =>
+        {
+            logging.IncludeFormattedMessage = true;
+            logging.IncludeScopes = true;
+            logging.ParseStateValues = true;
+            logging.SetResourceBuilder(resourceBuilder);
+            logging.AddOtlpExporter();
+        });
+
+        // Logs via OpenTelemetry (restore)
         builder.Logging.AddOpenTelemetry(logging =>
         {
             logging.IncludeFormattedMessage = true;
