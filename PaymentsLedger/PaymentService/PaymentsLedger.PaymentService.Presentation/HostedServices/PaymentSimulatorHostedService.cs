@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,6 +12,7 @@ internal sealed class PaymentSimulatorHostedService(
     IInternalEventBus bus,
     ILogger<PaymentSimulatorHostedService> logger) : BackgroundService
 {
+    private static readonly ActivitySource ActivitySource = new("PaymentsLedger.PaymentService.Presentation");
     private static readonly Guid Merchant1 = Guid.Parse("11111111-1111-1111-1111-111111111111");
     private static readonly Guid Merchant2 = Guid.Parse("22222222-2222-2222-2222-222222222222");
     private readonly Random _random = new();
@@ -47,11 +49,30 @@ internal sealed class PaymentSimulatorHostedService(
                             await handler.HandleAsync(payment, ct);
                         });
 
+                    using var activity = ActivitySource.StartActivity(
+                        "presentation.payment.create",
+                        ActivityKind.Producer);
+
+                    activity?.SetTag("payment.id", paymentId);
+                    activity?.SetTag("merchant.id", merchantId);
+                    activity?.SetTag("payment.amount", amount);
+                    activity?.SetTag("payment.currency", currency);
+                    activity?.SetTag("app.layer", "Presentation");
+                    activity?.SetTag("message.system", "inproc");
+                    activity?.SetTag("messaging.operation", "publish");
+
+                    activity?.AddEvent(new ActivityEvent(
+                        "payment.created.payload",
+                        tags: new ActivityTagsCollection
+                        {
+                            ["payment.id"] = paymentId,
+                            ["merchant.id"] = merchantId,
+                            ["payment.amount"] = amount,
+                            ["payment.currency"] = currency
+                        }));
+
                     await bus.PublishAsync(envelope, stoppingToken);
                 }
-
-                logger.LogInformation("Payment simulator published {Count} messages.", batchSize);
-
                 // Pace: 10 payments every 10 seconds
                 await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
             }
