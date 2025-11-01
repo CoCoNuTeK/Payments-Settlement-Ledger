@@ -1,0 +1,24 @@
+---
+apiVersion: "v1"
+kind: "Service"
+metadata:
+  name: "payment-service-service"
+  labels:
+    app.kubernetes.io/name: "PaymentsLedger"
+    app.kubernetes.io/component: "payment-service"
+    app.kubernetes.io/instance: "{{.Release.Name}}"
+spec:
+  type: "ClusterIP"
+  selector:
+    app.kubernetes.io/name: "PaymentsLedger"
+    app.kubernetes.io/component: "payment-service"
+    app.kubernetes.io/instance: "{{.Release.Name}}"
+  ports:
+    - name: "http"
+      protocol: "TCP"
+      port: "{{ .Values.parameters.payment_service.port_http }}"
+      targetPort: "{{ .Values.parameters.payment_service.port_http }}"
+    - name: "https"
+      protocol: "TCP"
+      port: "{{ .Values.parameters.payment_service.port_https }}"
+      targetPort: "{{ .Values.parameters.payment_service.port_https }}"

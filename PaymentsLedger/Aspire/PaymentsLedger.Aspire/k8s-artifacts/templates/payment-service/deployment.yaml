@@ -1,0 +1,45 @@
+---
+apiVersion: "apps/v1"
+kind: "Deployment"
+metadata:
+  name: "payment-service-deployment"
+  labels:
+    app.kubernetes.io/name: "PaymentsLedger"
+    app.kubernetes.io/component: "payment-service"
+    app.kubernetes.io/instance: "{{.Release.Name}}"
+spec:
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: "PaymentsLedger"
+        app.kubernetes.io/component: "payment-service"
+        app.kubernetes.io/instance: "{{.Release.Name}}"
+    spec:
+      containers:
+        - image: "{{ .Values.parameters.payment_service.payment_service_image }}"
+          name: "payment-service"
+          envFrom:
+            - configMapRef:
+                name: "payment-service-config"
+            - secretRef:
+                name: "payment-service-secrets"
+          ports:
+            - name: "http"
+              protocol: "TCP"
+              containerPort: "{{ .Values.parameters.payment_service.port_http }}"
+            - name: "https"
+              protocol: "TCP"
+              containerPort: "{{ .Values.parameters.payment_service.port_https }}"
+          imagePullPolicy: "IfNotPresent"
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: "PaymentsLedger"
+      app.kubernetes.io/component: "payment-service"
+      app.kubernetes.io/instance: "{{.Release.Name}}"
+  replicas: 1
+  revisionHistoryLimit: 3
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: "RollingUpdate"

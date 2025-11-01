@@ -1,0 +1,13 @@
+---
+apiVersion: "v1"
+kind: "ConfigMap"
+metadata:
+  name: "blazor-postgres-config"
+  labels:
+    app.kubernetes.io/name: "PaymentsLedger"
+    app.kubernetes.io/component: "blazor-postgres"
+    app.kubernetes.io/instance: "{{.Release.Name}}"
+data:
+  POSTGRES_HOST_AUTH_METHOD: "{{ .Values.config.blazor_postgres.POSTGRES_HOST_AUTH_METHOD }}"
+  POSTGRES_INITDB_ARGS: "{{ .Values.config.blazor_postgres.POSTGRES_INITDB_ARGS }}"
+  POSTGRES_USER: "{{ .Values.config.blazor_postgres.POSTGRES_USER }}"

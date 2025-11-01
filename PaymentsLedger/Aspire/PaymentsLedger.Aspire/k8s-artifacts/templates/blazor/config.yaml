@@ -1,0 +1,17 @@
+---
+apiVersion: "v1"
+kind: "ConfigMap"
+metadata:
+  name: "blazor-config"
+  labels:
+    app.kubernetes.io/name: "PaymentsLedger"
+    app.kubernetes.io/component: "blazor"
+    app.kubernetes.io/instance: "{{.Release.Name}}"
+data:
+  ASPNETCORE_URLS: "{{ .Values.config.blazor.ASPNETCORE_URLS }}"
+  OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES: "{{ .Values.config.blazor.OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES }}"
+  OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES: "{{ .Values.config.blazor.OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES }}"
+  OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY: "{{ .Values.config.blazor.OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY }}"
+  ASPNETCORE_FORWARDEDHEADERS_ENABLED: "{{ .Values.config.blazor.ASPNETCORE_FORWARDEDHEADERS_ENABLED }}"
+  HTTP_PORTS: "{{ .Values.config.blazor.HTTP_PORTS }}"
+  ConnectionStrings__messaging: "{{ .Values.config.blazor.ConnectionStrings__messaging }}"

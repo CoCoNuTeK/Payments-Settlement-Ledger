@@ -1,7 +1,11 @@
-using Aspire.Hosting.Azure;
-using Aspire.Hosting;
-
 var builder = DistributedApplication.CreateBuilder(args);
+
+var k8sEnv = builder
+    .AddKubernetesEnvironment("PaymentsLedger")
+    .WithProperties(k8s =>
+    {
+        k8s.HelmChartName = "PaymentsLedger";
+    });
 
 // ---------- Presentation (Blazor WASM) ----------
 var blazorPresentation = builder
